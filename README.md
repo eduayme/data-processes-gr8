@@ -1,5 +1,5 @@
 # Movies
-##Domain of interest
+## Domain of interest
 People are generally interested in movies, so we have thought that is an interest domain to choose for doing this assignment. We also want to explore different relationships between the attributes of distinct films.
 
 We have found some data science projects related to this domain. Some of them are:
@@ -14,7 +14,7 @@ Some example of questions that we will try to find are:
 - Does the duration of film influence the critic score?
 - Are some film genres more popular than others? Does it change from one year to another?
 
-##Finding Data
+## Finding Data
 We have downloaded the data from the following websites:
 - [TMDB Movie Metadata](https://www.kaggle.com/tmdb/tmdb-movie-metadata#tmdb_5000_movies.csv "TMDB Movie Database")
  - Collected by Kaggle. Extracted by getting the best 5000 films.
