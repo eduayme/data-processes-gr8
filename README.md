@@ -17,13 +17,13 @@ Some example of questions that we will try to find are:
 ## Finding Data
 We have downloaded the data from the following websites:
 - [TMDB Movie Metadata](https://www.kaggle.com/tmdb/tmdb-movie-metadata#tmdb_5000_movies.csv "TMDB Movie Database")
- - Collected by Kaggle. Extracted by getting the best 5000 films.
- -  4807 rows, 20 columns.
+  - Collected by Kaggle. Extracted by getting the best 5000 films.
+   - 4807 rows, 20 columns.
 - [IMDB Data](https://www.kaggle.com/PromptCloudHQ/imdb-data "IMDB Data") 
- - Collected by Kaggle. Extracted by querying the REST Api of IMDB to get the best 1000 films.
- - 1000 rows, 12 columns.
+  - Collected by Kaggle. Extracted by querying the REST Api of IMDB to get the best 1000 films.
+  - 1000 rows, 12 columns.
 - [Movies RData (extracted from IDA course, may not be accesible)](https://moodle.upm.es/titulaciones/oficiales/pluginfile.php/1535921/mod_resource/content/3/_site/movies.html)
- - We do not know.
- - 651 rows, 32 columns.
+  - We do not know.
+  - 651 rows, 32 columns.
 
 All the questions that we have propose can be answered with any of the datasets that we have choosen.
