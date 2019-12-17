@@ -1,0 +1,106 @@
+---
+title: "Final project - Data Processes UPM 2019/2020"
+author: "Eduard Aymerich, Fernando Alonso, Rafael Timermans, Bowen Huang y Jaime Acosta"
+date: "12/16/2019"
+output: ioslides_presentation
+---
+
+# Movies analysis
+
+```{r setup, include=FALSE}
+library(ggplot2)
+
+setwd("~/Documents/UPM/DataProcesses/data-processes-gr8/data/")
+top_1000_imbd_movies <- read.table("IMDB-Movies-Data.csv", header = TRUE, sep = ",", fill = TRUE)
+top_5000_tmdb_movies <- read.table("tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
+```
+
+## Abstract
+--
+
+## Introduction and Related work
+Cinema is the most complex and powerful art form in the present world. It can help us to better
+understand our own lives, the lives of those around us and even how our society and culture operate. They can
+shed light on political and spiritual matters too and can provide catharsis and perspective and may open our
+eyes to new ways of thinking, feeling and pursuing our lives. This is why, in our way, we want to pay tribute with this movies analysis. Why we love some movies and hate others? We will conduct a study to try to understand better how movies and people are really connected.
+
+We have found some inspirational data science projects related to this domain:
+
+- [Data science analysis of movies released in the cinema between 2000 and 2017](https://medium.com/datadriveninvestor/data-science-analysis-of-movies-released-in-the-cinema-between-2000-and-2017-b2d9e515d032 "Data science analysis of movies released in the cinema between 2000 and 2017"): Consists in a general analysis of the data available on the IMDb website for movies released in the cinema between 2000 and 2017.
+
+- [The most influential factor of imdb movie rating part in data scraping](https://towardsdatascience.com/the-most-influential-factor-of-imdb-movie-rating-part-i-data-scraping-61dc0c4dd518 "The most influential factor of imdb movie rating part in data scraping"): Use data-scraping technique to extract data from a IMDb movie list, create a Dataset and figures out what are the primary factors that influence a movie’s success.
+
+-  [What makes a successful film predicting a films revenue and user rating with machine learning?](https://towardsdatascience.com/what-makes-a-successful-film-predicting-a-films-revenue-and-user-rating-with-machine-learning-e2d1b42365e7 "What makes a successful film predicting a films revenue and user rating with machine learning?"): It stroves to find out whether, knowing only things you could know before a film was released, what the rating and revenue of the film would be. It uses machine learning in a model on a randomized 90% of the movies, and then tested it on the remaining 10%.
+
+- [Analyzing Movie Scores on IMDb and Rotten Tomatoes](http://rstudio-pubs-static.s3.amazonaws.com/336722_2193716117584b63a2a6ebb837217d85.html "Analyzing Movie Scores on IMDb and Rotten Tomatoes"): This project aims to obtain insights regarding the interpretation and comparison among these different scoring systems through data analysis and visualization. One focus in this project would be to visualize the distributions of scores and see how they vary across the years and across different genres. 
+
+- [Movie Review Analysis: Emotion Analysis of IMDb Movie Reviews](https://www.researchgate.net/publication/305222147_Movie_Review_Analysis_Emotion_Analysis_of_IMDb_Movie_Reviews "Movie Review Analysis: Emotion Analysis of IMDb Movie Reviews"): Currently, moviegoers base their decisions as to which movie to watch by looking at the ratings of movies as well as reading some of the reviews at IMDb or Amazon. This paper argues that there is a better way: reviewers movie scores and reviews can be analyzed with respect to their emotion content, aggregated and projected onto a movie, resulting in an emotion map for a movie.
+
+
+## Exploratory Data Analysis
+In our analysis we will use 2 different datasets. The first one, called IMDB Data, was collected by Kaggle on 2016. The data was extracted by querying the REST Api of [IMDB](https://www.imdb.com) to get the best 1000 films. The second one, dataset, called TMDB Movie Metadata, was also collected by Kaggle. The data was extracted from [The Movie Database](https://www.themoviedb.org) API to get 5000 films on 2017.
+
+### IMDB Data
+This dataset contains 1000 rows with a total of 12 columns.
+
+| *Name*        | *Data type*   | *Description*                                              |
+| :-----------: | :-----------: | :--------------------------------------------------------: |
+| Rank          | Integer       | Movie rank order                                           |
+| Title         | String        | The title of the film                                      |
+| Genre         | String        | A comma-separated list of genres used to classify the film |
+| Description   | String        | Brief one-sentence movie summary                           |
+| Director      | String        | The name of the film's director                            |
+| Actors        | String        | A comma-separated list of the main stars of the film       |
+| Year          | Integer       | The year that the film released as an integer              |
+| Runtime       | Integer       | The duration of the film in minutes                        |
+| Rating        | Decimal       | User rating for the movie 0-10                             |
+| Votes         | Integer       | Number of votes                                            |
+| Revenue       | Decimal       | Movie revenue in millions of dollars                       |
+| Metascore     | Integer       | Average of critic scores. Values are between 0 and 100     |
+
+### TMDB Movie Metadata
+This dataset contains 5000 rows with a total of 20 columns.
+
+| *Name*               | *Data type*   | *Description*                                                   |
+| :------------------: | :-----------: | :-------------------------------------------------------------: |
+| Budget               | Integer       | Movie budget in dollars                                         |
+| Genres               | String        | A comma-separated list of genres used to classify the film      |
+| Homepage             | Url           | Official website of the film                                    |
+| Id                   | Integer       | Identification number of the film created by TMBD               |
+| Keywords             | String        | A comma-separated list of keywords used to classify the film    |
+| Original_language    | String        | Original language of the film                                   |
+| Original_title       | String        | Original title of the film                                      | 
+| Overview             | String        | Short description of the film                                   |
+| Popularity           | Decimal       | Popularity in the TMBD website                                  |
+| Production_companies | String        | A comma-separated list of production companies in the film      |
+| Production_countries | String        | A comma-separated list of production countries in the film      |
+| Release_date         | Date          | Release date in YYYY-MM-DD format                               |
+| Revenue              | Integer       | Movie revenue in dollars                                        |
+| Runtime              | Integer       | The duration of the film in minutes                             |
+| Spoken_languages     | String        | A comma-separated list of languages spoken in the original film |
+| Status               | String        | Indicates if movie released. Values are "Released" or "Rumored" |
+| Tagline              | String        | Short text to clarify or make you excited about the film        |
+| Title                | String        | The title of the film                                           |
+| Vote_average         | Decimal       | Average of users rating for the movie 0-10                      |
+| Vote_count           | Integer       | Number of votes                                                 |
+
+
+```{r movies, echo = TRUE}
+summary(movies)
+```
+
+## Questions of interest
+- What attributes makes the film better (with better we refer to the money earned, the views, the ratings)?
+- Does the duration of film influence the critic score?
+- Are some film genres more popular than others? Have it changed during years?
+- Have old films better critic scores than recent ones?
+- Can a film earn a more than 100 million donars if the genre is not one of the top3 popular gender in that year?
+- The release year influences in the popularity and revenue of a movie?
+
+## Methods
+
+## Results
+
+## Discussion and Future work
+
+
