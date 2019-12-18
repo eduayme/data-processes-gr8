@@ -11,8 +11,8 @@ output: ioslides_presentation
 library(ggplot2)
 
 setwd("~/Documents/UPM/DataProcesses/data-processes-gr8/data/")
-top_1000_imbd_movies <- read.table("IMDB-Movies-Data.csv", header = TRUE, sep = ",", fill = TRUE)
-top_5000_tmdb_movies <- read.table("tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
+top_1000_imbd_movies <- read.csv("IMDB-Movies-Data.csv", header = TRUE, sep = ",", fill = TRUE)
+top_5000_tmdb_movies <- read.csv("tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
 ```
 
 ## Abstract
@@ -38,25 +38,7 @@ We have found some inspirational data science projects related to this domain:
 
 
 ## Exploratory Data Analysis
-In our analysis we will use 2 different datasets. The first one, called IMDB Data, was collected by Kaggle on 2016. The data was extracted by querying the REST Api of [IMDB](https://www.imdb.com) to get the best 1000 films. The second one, dataset, called TMDB Movie Metadata, was also collected by Kaggle. The data was extracted from [The Movie Database](https://www.themoviedb.org) API to get 5000 films on 2017.
-
-### IMDB Data
-This dataset contains 1000 rows with a total of 12 columns.
-
-| *Name*        | *Data type*   | *Description*                                              |
-| :-----------: | :-----------: | :--------------------------------------------------------: |
-| Rank          | Integer       | Movie rank order                                           |
-| Title         | String        | The title of the film                                      |
-| Genre         | String        | A comma-separated list of genres used to classify the film |
-| Description   | String        | Brief one-sentence movie summary                           |
-| Director      | String        | The name of the film's director                            |
-| Actors        | String        | A comma-separated list of the main stars of the film       |
-| Year          | Integer       | The year that the film released as an integer              |
-| Runtime       | Integer       | The duration of the film in minutes                        |
-| Rating        | Decimal       | User rating for the movie 0-10                             |
-| Votes         | Integer       | Number of votes                                            |
-| Revenue       | Decimal       | Movie revenue in millions of dollars                       |
-| Metascore     | Integer       | Average of critic scores. Values are between 0 and 100     |
+In our analysis we will use the TMDB Movie Metadata dataset collected by Kaggle. The data was extracted from [The Movie Database](https://www.themoviedb.org) API to get 5000 films on 2017.
 
 ### TMDB Movie Metadata
 This dataset contains 5000 rows with a total of 20 columns.
@@ -99,7 +81,16 @@ summary(movies)
 
 ## Methods
 
+### Strength of relationships
+
+
+### Prediction
+
 ## Results
+
+### Strength of relationships
+
+### Prediction
 
 ## Discussion and Future work
 
