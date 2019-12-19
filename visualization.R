@@ -28,7 +28,7 @@ library(caret) # to create traning and test dataset
 library(rpart) # to create the tree
 
 # Load data set
-Sys.setlocate("LC_ALL","English") # to avoid dataset have some unknow error of language of system
+Sys.setlocate("LC_ALL","English") # to avoid dataset have some unknow error of system language
 # titanic <- read.csv("Asignaturas/IDA/movies.RData", header = TRUE)
 movies <- read.csv(file="./datasets/tmdb_5000_movies.csv", header=TRUE, sep=",")
 
