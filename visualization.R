@@ -1,18 +1,34 @@
 setwd("D:/AplicacionesInformaticas/workspaceR")
 
 # Load up ggplot2 package to use for visualizations and dplyr for data manipulation
+install.packages(ggplot2)
+install.packages(dplyr)
+install.packages(vcd)
+install.packages(tidyr)
+install.packages(tidyverse)
+install.packages(GGally)
+install.packages(FactoMineR)
+install.packages(factoextra)
+install.packages(gridExtra)
+install.packages(lattice)
+install.packages(caret)
+install.packages(rpart)
+
 library(ggplot2)
 library(dplyr)
-library("vcd")
+library(vcd)
 library(tidyr)
-
 library(tidyverse) #data manipilation
 library(GGally) # nice scatterplot matrix
 library(FactoMineR) # PCA computation
 library(factoextra) # nice plotting for PCA objects
 library(gridExtra) # to build grid of plots
+library(lattice) # to build more plot
+library(caret) # to create traning and test dataset
+library(rpart) # to create the tree
 
 # Load data set
+Sys.setlocate("LC_ALL","English") # to avoid dataset have some unknow error of language of system
 # titanic <- read.csv("Asignaturas/IDA/movies.RData", header = TRUE)
 movies <- read.csv(file="./datasets/tmdb_5000_movies.csv", header=TRUE, sep=",")
 
@@ -123,7 +139,7 @@ gen_vot+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 action_movies <- movies_reduced_votes2 %>%
   filter(genres=="Action")
 
-#graph relations between busgete and revenue
+#graph relations between the budget and revenue
 plotAction=ggplot(data=movies2, aes(x=budget, y=revenue))
 plotAction+geom_jitter(aes(x=budget, color=revenue), position=position_jitter(w=.3, h=.0))
 
