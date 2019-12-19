@@ -71,7 +71,7 @@ plot3+geom_jitter(aes(x=vote_average, color=revenue), position=position_jitter(w
 plot4=ggplot(data=movies2, aes(x=vote_average, y=budget))
 plot4+geom_jitter(aes(x=vote_average, color=budget), position=position_jitter(w=.3, h=.0))
 
-##with genre, is genre related with vote average and score?¿
+##with genre, is genre related with vote average and score??
 #graph relations between genre and vote average
 gen_vot <- ggplot(movies2, aes(x=genres, y=revenue),las=2) + 
   geom_violin()
