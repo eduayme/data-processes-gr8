@@ -21,6 +21,7 @@ library("GGally")     # nice scatterplot matrix
 library("FactoMineR") # PCA computation
 library("factoextra") # nice plotting for PCA objects
 library("gridExtra")  # to build grid of plots
+library("plyr")       # join function
 
 # Load data set
 tmdb_movies <- read.csv("./data/tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
@@ -77,7 +78,7 @@ This dataset contains 4803 rows with a total of 20 columns.
 | Vote_average         | Decimal       | Average of users rating for the movie 0-10                      |
 | Vote_count           | Integer       | Number of votes                                                 |
 
-```{r movies, echo = TRUE}
+```{r, echo = TRUE}
 summary(tmdb_movies)
 ```
 
@@ -263,14 +264,14 @@ It is obvious that, despite of the exception in the 20s years, the budget increa
 - Does the duration of film influence the average of users rating?
 - Are some film genres more popular than others? Have it changed during years?
 - Have old films better critic scores than recent ones?
-- Can a film earn a more than 100 million donars if the genre is not one of the top3 popular gender in that year?
+- Can a film earn a more than 1 billion dollars if the genre is not one of the top3 popular gender in that year?
 - The release year influences in the popularity and revenue of a movie?
 
 ## Methods
 
 ### Strength of relationships
 First we will clean the data
-```{r movies, echo = TRUE}
+```{r clean_data, echo = TRUE}
 #### Remove budget higher from 0 and revenue higher than 0
 tmdb_movies_clean <- tmdb_movies %>% 
                      filter(budget>0) %>% 
@@ -283,12 +284,12 @@ tmdb_movies_clean <- na.omit(tmdb_movies_clean)
 Question 1) First we will see which attribute makes the film earn more money.
 
 Step 1.1) Select rows that we will use. In this case the earn money (*revenue*) are related to the variables *budget*, *genres*, *production companies*, *release date* and *spoken languages*.
-```{r movies, echo = TRUE}
-movies_related_revenue <- tmdb_movies_clean %>% select(revenue, budget, genres, production_companies, release_date, spoken_languages)
+```{r revenue_related, echo = TRUE}
+movies_related_revenue <- tmdb_movies_clean %>% select(revenue, budget, genres, popularity, production_companies, release_date, spoken_languages)
 ```
 
 Step 1.2) Compare the variable *revenue* with other variables.
-```{r movies, echo = TRUE}
+```{r compare_revenue_budget, echo = TRUE}
 # Compare *revenue* with *budget*
 movies_r <- movies_related_revenue %>% select(revenue, budget)
 cor(movies_r$revenue, movies_r$budget)
@@ -296,55 +297,46 @@ cor(movies_r$revenue, movies_r$budget)
 ggplot(movies_related_revenue, aes(x=revenue, y=budget))+
   geom_point()+
   geom_smooth(method=lm)+
-  labs(x = "Revenue", y="Budget", title="Relation between Revenue and Badget")
+  labs(x="Revenue", y="Budget", title="Relation between Revenue and Badget")
 
-regression_model = lm(formula = revenue ~ budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+regression_model = lm(formula = revenue ~ budget + genres + popularity + production_companies + release_date + spoken_languages, data=movies_related_revenue)
 
 summary(regression_model)
-# Compare *revenue* with *genres*
-
-# Compare *revenue* with *product_companies*
-
-# Compare *revenue* with *release_date*
-
-# Compare *revenue* with *spoken_languages*
-
 ```
 
 Question 2) Secondly we will see which attribute makes the film more popular in the TMBD website.
-```{r movies, echo = TRUE}
+```{r more_popular, echo = TRUE}
 # Compare *popularity* with *revenue*
+movies_r <- movies_related_revenue %>% select(revenue, popularity)
+cor(movies_r$revenue, movies_r$popularity)
+
+ggplot(movies_related_revenue, aes(x=revenue, y=popularity))+
+  geom_point()+
+  geom_smooth(method=lm)+
+  labs(x="Revenue", y="Popularity", title="Relation between Revenue and Popularity")
+
+regression_model = lm(formula = revenue ~ popularity + budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+
+summary(regression_model)
 
 # Compare *popularity* with *budget*
 
 # Compare *popularity* with *genres*
 
-# Compare *popularity* with *product_companies*
-
-# Compare *popularity* with *release_date*
-
-# Compare *popularity* with *spoken_languages*
-
 ```
 
 Question 3) Now we will see which attribute makes the film better voted by users.
-```{r movies, echo = TRUE}
+```{r better_voted, echo = TRUE}
 # Compare *vote_average* with *revenue*
 
 # Compare *vote_average* with *budget*
 
 # Compare *vote_average* with *genres*
 
-# Compare *vote_average* with *product_companies*
-
-# Compare *vote_average* with *release_date*
-
-# Compare *vote_average* with *spoken_languages*
-
 ```
 
 Question 4) After that we will see if the duration of film influence the average of users rating.
-```{r movies, echo = TRUE}
+```{r duration_influence_user_rating, echo = TRUE}
 # Numerical value of the correlation
 movies_r <- tmdb_movies_clean %>% select(vote_average, runtime)
 cor(movies_r$vote_average, movies_r$runtime)
@@ -356,36 +348,118 @@ geom_smooth(method=lm)
 ```
 
 Question 5) The next stage will be analyse the more popular movies genres and how has it changed during years.
-```{r movies, echo = TRUE}
+```{r popular_genres_during_years, echo = TRUE}
 # Top3 genres during years
+# Select the top genre for each year
+popular_genre <- tmdb_movies_clean
+popular_genre$year <- format(as.Date(popular_genre$release_date, format="%Y-%m-%d"),"%Y") # add year column
+
+# get first genre
+genre <- popular_genre$genres
+genre <- as.data.frame(genre)
+genre <- separate(genre, col = genre, into = c("1","2","3","4","5","6"))
+popular_genre$genres <- genre$`5`
+popular_genre <- na.omit(popular_genre) # we have removed an extra film with no genre
+
+popular_genre <- popular_genre %>%
+                 select(genres, year)
+
+# Subdivisions years
+old_genre <- popular_genre %>% 
+              filter(year<=1980)
+count(old_genre, "genres")
+# Top3:
+# 1) Drama
+# 2) Action and Comedy (equal number of films)
+
+neutral_genre <- popular_genre %>% 
+              filter(year>1980 && year<2015)
+count(neutral_genre, "genres")
+# Top3:
+# 1) Drama
+# 2) Comedy
+# 3) Action
+
+new_genre <- popular_genre %>% 
+              filter(year>=2015)
+count(new_genre, "genres")
+# Top3:
+# 1) Action
+# 2) Drama
+# 3) Comedy
 
 ```
 
 Question 6) Moreover we will see if old films have better user scores than recent ones.
-```{r movies, echo = TRUE}
+```{r old_films_better_scores, echo = TRUE}
 # Compare films vote_average of films released on 1980 or before with the ones released on 2015 or after.
+tmdb_movies_clean$year <- format(as.Date(tmdb_movies_clean$release_date, format="%Y-%m-%d"),"%Y")
 
+movies_r <- tmdb_movies_clean %>% 
+            select(vote_average, vote_count, year)
+
+movies_old <- movies_r %>% 
+              filter(year<=1980)
+nrow(movies_old) # number of rows
+mean(movies_old$vote_average) # average vote
+sum(movies_old$vote_count) # number of votes
+
+movies_now <- movies_r %>% 
+              filter(year>=2015)
+nrow(movies_now) # number of rows
+mean(movies_now$vote_average) # average vote
+sum(movies_now$vote_count) # number of votes
 ```
 
-Question 7) Lastly we will ask if a film can earn a more than 100 million dollars if the genre is not one of the most popular gender in that year.
-```{r movies, echo = TRUE}
-# Filter movies with revenue more than 100.000.000
+Question 7) Lastly we will ask if a film can earn a more than 1 billion dollars if the genre is not one of the most popular gender in that year.
+```{r film_earn_billion, echo = TRUE}
+# Filter movies with revenue more than 1.000.000.000 dollars
 movies_more_revenue <- tmdb_movies_clean %>% 
-                       filter(revenue>100000000)
+                       filter(revenue>1000000000)
 
 # Select years from dates of the movies with more revenue
-years <- format(as.Date(movies_more_revenue$release_date, format="%Y-%m-%d"),"%Y")
+movies_more_revenue$year <- format(as.Date(movies_more_revenue$release_date, format="%Y-%m-%d"),"%Y")
+
+# get first genre
+genre <- movies_more_revenue$genres
+genre <- as.data.frame(genre)
+genre <- separate(genre, col = genre, into = c("1","2","3","4","5","6"))
+movies_more_revenue$genres <- genre$`5`
+movies_more_revenue <- na.omit(movies_more_revenue) # we have removed an extra film with no genre
+
+movies_more_revenue <- movies_more_revenue %>% select(revenue, year, genres)
+movies_more_revenue <- movies_more_revenue[order(movies_more_revenue$year),]
+names(movies_more_revenue)[3] <- "movie_genre"
 
 # Select the top genre for each year
+year_top_genre <- tmdb_movies_clean
+year_top_genre$year <- format(as.Date(year_top_genre$release_date, format="%Y-%m-%d"),"%Y") # add year column
 
+# get first genre
+genre <- year_top_genre$genres
+genre <- as.data.frame(genre)
+genre <- separate(genre, col = genre, into = c("1","2","3","4","5","6"))
+year_top_genre$genres <- genre$`5`
+year_top_genre <- na.omit(year_top_genre) # we have removed an extra film with no genre
+
+# get genre and year
+year_top_genre <- year_top_genre %>% select(genres, year) 
+
+year_genre <- year_top_genre %>% select(year, genres) %>% 
+              group_by(year)
+year_genre
 
 # Compare the genre of each film with the top genre of the release year
-
+join(movies_more_revenue, year_genre, by ="year")
 ```
 
 Question 8) Finally we will see if the release year influences in the popularity and revenue of a movie.
-```{r movies, echo = TRUE}
+```{r release_year_influences_popularity, echo = TRUE}
+tmdb_movies_clean$year <- format(as.Date(tmdb_movies_clean$release_date, format="%Y-%m-%d"),"%Y")
 
+movies_r <- tmdb_movies_clean %>% 
+            select(popularity, revenue, year)
+movies_r
 ```
 
 ### Prediction

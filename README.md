@@ -10,12 +10,13 @@ We have found some data science projects related to this domain. Some of them ar
 - [Analyzing Movie Scores on IMDb and Rotten Tomatoes](http://rstudio-pubs-static.s3.amazonaws.com/336722_2193716117584b63a2a6ebb837217d85.html "Analyzing Movie Scores on IMDb and Rotten Tomatoes")
 
 Some example of questions that we will try to find are:
-- What attributes makes the film better (with better we refer to the money earned, the views, the ratings)?
-- Does the duration of film influence the critic score?
+- What attributes makes the film better (with better we refer to the money earned, the popularity, the ratings)?
+- Does the duration of film influence the average of users rating?
 - Are some film genres more popular than others? Have it changed during years?
 - Have old films better critic scores than recent ones?
-- Can a film earn a lot of money if the genre is not really popular in that year?
-- The release date influences in the popularity and revenue of a movie?
+- Can a film earn a more than 1 billion dollars if the genre is not one of the top3 popular gender in that year?
+- The release year influences in the popularity and revenue of a movie?
+
 
 ## Finding Data
 We have downloaded the data from the following websites:
