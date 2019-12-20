@@ -1,0 +1,203 @@
+---
+title: "Final project - Data Processes UPM 2019/2020"
+author: "Eduard Aymerich, Fernando Alonso, Rafael Timermans, Bowen Huang y Jaime Acosta"
+date: "12/16/2019"
+output: ioslides_presentation
+---
+
+# Movies analysis
+
+```{r setup, include=FALSE}
+library("ggplot2")
+library("tidyverse")
+library("ggpubr")
+library("corrplot")
+library("Hmisc")
+
+setwd("~/Documents/UPM/DataProcesses/data-processes-gr8/data/")
+tmdb_movies <- read.csv("tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
+```
+
+## Abstract
+--
+
+## Introduction and Related work
+Cinema is the most complex and powerful art form in the present world. It can help us to better
+understand our own lives, the lives of those around us and even how our society and culture operate. They can
+shed light on political and spiritual matters too and can provide catharsis and perspective and may open our
+eyes to new ways of thinking, feeling and pursuing our lives. This is why, in our way, we want to pay tribute with this movies analysis. Why we love some movies and hate others? We will conduct a study to try to understand better how movies and people are really connected.
+
+We have found some inspirational data science projects related to this domain:
+
+- [Data science analysis of movies released in the cinema between 2000 and 2017](https://medium.com/datadriveninvestor/data-science-analysis-of-movies-released-in-the-cinema-between-2000-and-2017-b2d9e515d032 "Data science analysis of movies released in the cinema between 2000 and 2017"): Consists in a general analysis of the data available on the IMDb website for movies released in the cinema between 2000 and 2017.
+
+- [The most influential factor of imdb movie rating part in data scraping](https://towardsdatascience.com/the-most-influential-factor-of-imdb-movie-rating-part-i-data-scraping-61dc0c4dd518 "The most influential factor of imdb movie rating part in data scraping"): Use data-scraping technique to extract data from a IMDb movie list, create a Dataset and figures out what are the primary factors that influence a movie’s success.
+
+-  [What makes a successful film predicting a films revenue and user rating with machine learning?](https://towardsdatascience.com/what-makes-a-successful-film-predicting-a-films-revenue-and-user-rating-with-machine-learning-e2d1b42365e7 "What makes a successful film predicting a films revenue and user rating with machine learning?"): It stroves to find out whether, knowing only things you could know before a film was released, what the rating and revenue of the film would be. It uses machine learning in a model on a randomized 90% of the movies, and then tested it on the remaining 10%.
+
+- [Analyzing Movie Scores on IMDb and Rotten Tomatoes](http://rstudio-pubs-static.s3.amazonaws.com/336722_2193716117584b63a2a6ebb837217d85.html "Analyzing Movie Scores on IMDb and Rotten Tomatoes"): This project aims to obtain insights regarding the interpretation and comparison among these different scoring systems through data analysis and visualization. One focus in this project would be to visualize the distributions of scores and see how they vary across the years and across different genres. 
+
+- [Movie Review Analysis: Emotion Analysis of IMDb Movie Reviews](https://www.researchgate.net/publication/305222147_Movie_Review_Analysis_Emotion_Analysis_of_IMDb_Movie_Reviews "Movie Review Analysis: Emotion Analysis of IMDb Movie Reviews"): Currently, moviegoers base their decisions as to which movie to watch by looking at the ratings of movies as well as reading some of the reviews at IMDb or Amazon. This paper argues that there is a better way: reviewers movie scores and reviews can be analyzed with respect to their emotion content, aggregated and projected onto a movie, resulting in an emotion map for a movie.
+
+
+## Exploratory Data Analysis
+In our analysis we will use the TMDB Movie Metadata dataset collected by Kaggle. The data was extracted from [The Movie Database](https://www.themoviedb.org) API to get almost 5000 films on 2017.
+
+### TMDB Movie Metadata
+This dataset contains 4803 rows with a total of 20 columns.
+
+| *Name*               | *Data type*   | *Description*                                                   |
+| :------------------: | :-----------: | :-------------------------------------------------------------: |
+| Budget               | Integer       | Movie budget in dollars                                         |
+| Genres               | String        | A comma-separated list of genres used to classify the film      |
+| Homepage             | Url           | Official website of the film                                    |
+| Id                   | Integer       | Identification number of the film created by TMBD               |
+| Keywords             | String        | A comma-separated list of keywords used to classify the film    |
+| Original_language    | String        | Original language of the film                                   |
+| Original_title       | String        | Original title of the film                                      | 
+| Overview             | String        | Short description of the film                                   |
+| Popularity           | Decimal       | Popularity in the TMBD website                                  |
+| Production_companies | String        | A comma-separated list of production companies in the film      |
+| Production_countries | String        | A comma-separated list of production countries in the film      |
+| Release_date         | Date          | Release date in YYYY-MM-DD format                               |
+| Revenue              | Integer       | Movie revenue in dollars                                        |
+| Runtime              | Integer       | The duration of the film in minutes                             |
+| Spoken_languages     | String        | A comma-separated list of languages spoken in the original film |
+| Status               | String        | Indicates if movie released. Values are "Released" or "Rumored" |
+| Tagline              | String        | Short text to clarify or make you excited about the film        |
+| Title                | String        | The title of the film                                           |
+| Vote_average         | Decimal       | Average of users rating for the movie 0-10                      |
+| Vote_count           | Integer       | Number of votes                                                 |
+
+```{r movies, echo = TRUE}
+summary(tmdb_movies)
+```
+
+## Questions of interest
+- What attributes makes the film better (with better we refer to the money earned, the popularity, the ratings)?
+- Does the duration of film influence the average of users rating?
+- Are some film genres more popular than others? Have it changed during years?
+- Have old films better critic scores than recent ones?
+- Can a film earn a more than 100 million donars if the genre is not one of the top3 popular gender in that year?
+- The release year influences in the popularity and revenue of a movie?
+
+## Methods
+
+### Strength of relationships
+First we will clean the data
+```{r movies, echo = TRUE}
+#### Remove budget higher from 0 and revenue higher than 0
+tmdb_movies_clean <- tmdb_movies %>% 
+                     filter(budget>0) %>% 
+                     filter(revenue>0) 
+
+#### Remove where there is no data
+tmdb_movies_clean <- na.omit(tmdb_movies_clean)
+```
+
+Question 1) First we will see which attribute makes the film earn more money.
+
+Step 1.1) Select rows that we will use. In this case the earn money (*revenue*) are related to the variables *budget*, *genres*, *production companies*, *release date* and *spoken languages*.
+```{r movies, echo = TRUE}
+movies_related_revenue <- tmdb_movies_clean %>% select(revenue, budget, genres, production_companies, release_date, spoken_languages)
+```
+
+Step 1.2) Compare the variable *revenue* with other variables.
+```{r movies, echo = TRUE}
+# Compare *revenue* with *budget*
+movies_r <- movies_related_revenue %>% select(revenue, budget)
+cor(movies_r$revenue, movies_r$budget)
+
+ggplot(movies_related_revenue, aes(x=revenue, y=budget))+
+  geom_point()+
+  geom_smooth(method=lm)+
+  labs(x = "Revenue", y="Budget", title="Relation between Revenue and Badget")
+
+regression_model = lm(formula = revenue ~ budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+# Compare *revenue* with *genres*
+
+# Compare *revenue* with *product_companies*
+
+# Compare *revenue* with *release_date*
+
+# Compare *revenue* with *spoken_languages*
+
+```
+
+Question 2) Secondly we will see which attribute makes the film more popular in the TMBD website.
+```{r movies, echo = TRUE}
+# Compare *popularity* with *revenue*
+
+# Compare *popularity* with *budget*
+
+# Compare *popularity* with *genres*
+
+# Compare *popularity* with *product_companies*
+
+# Compare *popularity* with *release_date*
+
+# Compare *popularity* with *spoken_languages*
+
+```
+
+Question 3) Now we will see which attribute makes the film better voted by users.
+```{r movies, echo = TRUE}
+# Compare *vote_average* with *revenue*
+
+# Compare *vote_average* with *budget*
+
+# Compare *vote_average* with *genres*
+
+# Compare *vote_average* with *product_companies*
+
+# Compare *vote_average* with *release_date*
+
+# Compare *vote_average* with *spoken_languages*
+
+```
+
+Question 4) After that we will see if the duration of film influence the average of users rating.
+```{r movies, echo = TRUE}
+# Numerical value of the correlation
+movies_r <- tmdb_movies_clean %>% select(vote_average, runtime)
+cor(movies_r$vote_average, movies_r$runtime)
+
+# Graphical representation
+ggplot(tmdb_movies_clean, aes(x=vote_average, y=runtime)) +
+geom_point(shape=1) +
+geom_smooth(method=lm)
+```
+
+Question 5) The next stage will be analyse the more popular movies genres and how has it changed during years.
+```{r movies, echo = TRUE}
+# Top3 genres during years
+
+```
+
+Question 6) Moreover we will see if old films have better user scores than recent ones.
+```{r movies, echo = TRUE}
+# Compare films vote_average of films released on 1980 or before with the ones released on 2015 or after.
+
+```
+
+Question 7) Lastly we will ask if a film can earn a more than 100 million dollars if the genre is not one of the top3 popular gender in that year.
+```{r movies, echo = TRUE}
+
+```
+
+Question 8) Finally we will see if the release year influences in the popularity and revenue of a movie.
+```{r movies, echo = TRUE}
+
+```
+
+### Prediction
+
+## Results
+
+### Strength of relationships
+
+### Prediction
+
+## Discussion and Future work
+
+

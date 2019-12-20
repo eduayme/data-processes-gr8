@@ -12,7 +12,10 @@ We have found some data science projects related to this domain. Some of them ar
 Some example of questions that we will try to find are:
 - What attributes makes the film better (with better we refer to the money earned, the views, the ratings)?
 - Does the duration of film influence the critic score?
-- Are some film genres more popular than others? Does it change from one year to another?
+- Are some film genres more popular than others? Have it changed during years?
+- Have old films better critic scores than recent ones?
+- Can a film earn a lot of money if the genre is not really popular in that year?
+- The release date influences in the popularity and revenue of a movie?
 
 ## Finding Data
 We have downloaded the data from the following websites:
