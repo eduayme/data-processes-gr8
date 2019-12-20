@@ -2,7 +2,7 @@ Discussion:
 The implications of the research are directly related with the film industry or the film critics. The success (votes and views) of the film is influenced by the revenues, date or the duration of the film.
 
 TODO: 
----AÒadir lo que se ha descubierto m·s en concreto, explorando
+---A√±adir lo que se ha descubierto m√°s en concreto, explorando
 
 Future work:
 The future work could be divided, mainly, in two main fields:
