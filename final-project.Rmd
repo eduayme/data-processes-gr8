@@ -10,10 +10,17 @@ output: ioslides_presentation
 ```{r setup, include=FALSE}
 # Load packages
 library("ggplot2")
-library("tidyverse")
 library("ggpubr")
 library("corrplot")
 library("Hmisc")
+library("dplyr")
+library("vcd")
+library("tidyr")
+library("tidyverse")  #data manipilation
+library("GGally")     # nice scatterplot matrix
+library("FactoMineR") # PCA computation
+library("factoextra") # nice plotting for PCA objects
+library("gridExtra")  # to build grid of plots
 
 # Load data set
 tmdb_movies <- read.csv("./data/tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
@@ -80,10 +87,11 @@ We will clean a bit the data, so we will only use movies with all the fileds com
 In addition, each film has multiple genres, but we will only consider the first genre of each movie.
 ```{r clean, include = FALSE}
 # removing where we have no data to work with
-movies2 <- na.omit(movies)
+movies2 <- na.omit(tmdb_movies)
 view(movies2)
 movies <-movies2
-# theres a lot of films with revenue=0 and busget=0, we donw want this
+
+# theres a lot of films with revenue=0 and busget=0, we don'w't want this
 movies2 <- movies2 %>% # 
   filter(budget>0) %>% #
   filter(revenue>0)
@@ -140,18 +148,17 @@ gen_vot <- ggplot(movies2, aes(x=genres, y=revenue),las=2) +
 gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 We can see than Action, Drama and Science-Fiction make a lot more money than the others movie genres. To making a better comparision, we are now to clean a bit more the data. We are going to keep only the genres more popular (by revenue), and these are:
- - Action
- - Adventure
- - Comedy
- - Drama 
- - Family
- - Fantasy
- - omance
- - Science-fiction
- - Thriller
+ - 1) Action
+ - 2) Adventure
+ - 3) Comedy
+ - 4) Drama 
+ - 5) Family
+ - 6) Fantasy
+ - 7) Romance
+ - 8) Science-fiction
+ - 9) Thriller
  
 We are going to compare with the vote average too, so we will quit all the movies with few votes.
- 
 ```{r violin2}
 summary(movies2$vote_count)
 ```
@@ -181,12 +188,10 @@ gen_vot <- ggplot(movies_reduced_votes, aes(x=genres, y=revenue)) +
 gen_vot <- gen_vot+facet_wrap(~vote_average)
 gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
-
 We see than the genres revenue are similar, but when the score rounds the seven, action films earn much more money than the rest. To see if there is a different pattern with the action movies, we are going to do the same graphics than before but only with action movies.
 
 #### Action movies
 We need to clean the data first:
-
 ```{r clean_action}
 # lets see revenue vs budget in action films compared to vote score, only for action movies
 action_movies <- movies_reduced_votes %>%
@@ -205,8 +210,8 @@ gen_vot <- gen_vot+facet_wrap(~vote_average)
 gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # grid.arrange(p1, p2, ncol = 2)
-# Movies than have an 8 as a vote_average don't earn a lot or few money. We can also see that the ones that earn a lot of money they have an average budget.
 ```
+Movies than have an 8 as a vote_average don't earn a lot or few money. We can also see that the ones that earn a lot of money they have an average budget.
 
 The first graph is the same that the one considering all genres, so it is no usefull for the study. However, we can see that in action films it is possible that the revenue is indeed related with the vote_average, so as the vote average rise, there are more films which have more revenue. The exception is the movies with more than an 8. These movies doesn´t have a big revenue, but they doen´t invest too much money in the budget neither, so they are likely profitable.
 
@@ -226,9 +231,8 @@ p5 <- ggplot(movies2, aes(x=release_date, y=budget)) +
   geom_point(color="steelblue") +
   xlab("")
 
-grid.arrange(p1, p2, ncol = 2)
+grid.arrange(p4, p5, ncol = 2)
 ```
-
 Seems like indeed there is more money invested each year. To have a clearer view, we have to plot the graph with only the median value, not with all the films.
 
 ```{r mean_year, echo=FALSE}
@@ -252,7 +256,6 @@ p8 <- ggplot(movies3, aes(x=release_date, y=budget_mean)) +
   
 grid.arrange(p7, p8, ncol = 2)
 ```
-
 It is obvious that, despite of the exception in the 20s years, the budget increase each year. In the revenue is not that obvious and it is possible that we need to do a time series analysis to be sure, but the tendency is increasing too.
 
 
@@ -372,7 +375,7 @@ movies_more_revenue <- tmdb_movies_clean %>%
                        filter(revenue>100000000)
 
 # Select years from dates of the movies with more revenue
-years <- format(as.Date(movies_more_revenue$Release_date, format="%d/%m/%Y"),"%Y")
+years <- format(as.Date(movies_more_revenue$release_date, format="%Y-%m-%d"),"%Y")
 
 # Select the top genre for each year
 
