@@ -2,7 +2,9 @@
 title: "Final project - Data Processes UPM 2019/2020"
 author: "Eduard Aymerich, Fernando Alonso, Rafael Timermans, Bowen Huang y Jaime Acosta"
 date: "12/16/2019"
-output: ioslides_presentation
+output:
+  slidy_presentation: default
+  ioslides_presentation: default
 ---
 
 # Movies analysis
@@ -462,11 +464,12 @@ join(movies_more_revenue, year_genre, by ="year")
 
 Question 8) Finally we will see if the release year influences in the popularity and revenue of a movie.
 ```{r release_year_influences_popularity, echo = TRUE}
-tmdb_movies_clean$year <- format(as.Date(tmdb_movies_clean$release_date, format="%Y-%m-%d"),"%Y")
+tmdb_movies_clean$year <- as.numeric(format(as.Date(tmdb_movies_clean$release_date, format="%Y-%m-%d"),"%Y"))
 
-movies_r <- tmdb_movies_clean %>% 
-            select(popularity, revenue, year)
-movies_r
+# Numerical value of the correlation
+movies_r <- tmdb_movies_clean %>% select(year, popularity, revenue)
+cor(movies_r$year, movies_r$popularity)
+cor(movies_r$year, movies_r$revenue)
 ```
 
 ### Prediction
@@ -486,9 +489,10 @@ The final data frame looks like this:
 5 260000000                en   43.92699   2012-03-07  284139100     132 Released          6.1       2124          11             36
 6 258000000                en  115.69981   2007-05-01  890871626     139 Released          5.9       3576          12             18
 ```
+
 About the machine learning algorithm, we just have used two types:
-- Linear regression algorithm for the regression related questions. This algorithm allows seeing how well a variable (in this particular project, the runtime and release date) can predict score value.
-- KNN algorithm to classify the data into clusters by the revenue and see the clusters proprieties.
+-	Linear regression algorithm for the regression related questions. This algorithm allows seeing how well a variable (in this particular project, the runtime and release date) can predict score value.
+-	KNN algorithm to classify the data into clusters by the revenue and see the clusters proprieties.
 
 
 ## Results
@@ -514,7 +518,12 @@ The variable that influences more to get better average mark by users is the *po
 | -0.03120827 | 0.187839  | 0.028153 | 0.3185934    | 0.0051984      | -0.0018729         |
 
 #### Question 4)
-Here we demonstrate that the duration of film doesn't influence the average of users rating. There is no relation between this 2 factors.
+We get a correlation of 0.3786415 between the duration of the film and the average of users rating. This means there is almost no relation between this 2 factors. We can see it a graphic representation here:
+```{r question4, echo = TRUE}
+ggplot(tmdb_movies_clean, aes(x=vote_average, y=runtime)) +
+geom_point(shape=1) +
+geom_smooth(method=lm)
+```
 
 #### Question 5)
 We split the years in 3 clusters: before 1980, between 1980 and 2014 and after 2015.
@@ -547,14 +556,15 @@ In the results we can see that is difficult that a film can earn more than 1 bil
 | 21                           | 18                                         | 3
 
 #### Question 8)
-Here we can see that the release year does not influence in the popularity and revenue of a movie.
-
+Here we can see that the release year does not influence in the popularity and revenue of a movie as both correlations numbers are close to 0.
+| *Popularity* | *Revenue* |
+| :----------: | :-------: |
+| 0.1613506    | 0.1474426 |
 
 ### Prediction
 
 We had to compare how well the variable score is predicted by:
 - The runtime --> we have had the next output:
-
 ``> correlation_accuracy
              actuals predicteds
 actuals    1.0000000  0.4146759
@@ -566,7 +576,7 @@ predicteds 0.4146759  1.0000000
 
 Seeing the correlation index and the rmse, we can conclude that the variables have a similar directional movement. Using the rmse, we can see that the mean error is too low, so the variables are correlated.
 
-- The release date --> we have had the next output:
+-	The release date --> we have had the next output:
 ``> correlation_accuracy
              actuals predicteds
 actuals    1.0000000  0.1650971
