@@ -405,12 +405,17 @@ The final data frame looks like this:
 5 260000000                en   43.92699   2012-03-07  284139100     132 Released          6.1       2124          11             36
 6 258000000                en  115.69981   2007-05-01  890871626     139 Released          5.9       3576          12             18
 ``
+About the machine learning algorithm, we just have used two types:
+-	Linear regression algorithm for the regression related questions. This algorithm allows seeing how well a variable (in this particular project, the runtime and release date) can predict score value.
+-	KNN algorithm to classify the data into clusters by the revenue and see the clusters proprieties.
 
 ## Results
 
 ### Strength of relationships
 
 ### Prediction
+
+
 
 ## Discussion and Future work
 
