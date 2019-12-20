@@ -2,9 +2,7 @@
 title: "Final project - Data Processes UPM 2019/2020"
 author: "Eduard Aymerich, Fernando Alonso, Rafael Timermans, Bowen Huang y Jaime Acosta"
 date: "12/16/2019"
-output:
-  slidy_presentation: default
-  ioslides_presentation: default
+output: html_document
 ---
 
 # Movies analysis
@@ -281,7 +279,7 @@ tmdb_movies_clean <- tmdb_movies %>%
 tmdb_movies_clean <- na.omit(tmdb_movies_clean)
 ```
 
-Question 1) First we will see which attribute makes the film earn more money.
+#### Question 1) First we will see which attribute makes the film earn more money.
 
 Step 1.1) Select rows that we will use. In this case the earn money (*revenue*) are related to the variables *budget*, *genres*, *production companies*, *release date* and *spoken languages*.
 ```{r revenue_related, echo = TRUE}
@@ -303,7 +301,7 @@ regression_model = lm(formula = revenue ~ budget + genres + popularity + product
 summary(regression_model)
 ```
 
-Question 2) Secondly we will see which attribute makes the film more popular in the TMBD website.
+#### Question 2) Secondly we will see which attribute makes the film more popular in the TMBD website.
 ```{r more_popular, echo = TRUE}
 movies_r <- movies_related_revenue %>% select(revenue, popularity)
 cor(movies_r$revenue, movies_r$popularity)
@@ -318,7 +316,7 @@ regression_model = lm(formula = revenue ~ popularity + budget + genres + product
 summary(regression_model)
 ```
 
-Question 3) Now we will see which attribute makes the film better voted by users.
+#### Question 3) Now we will see which attribute makes the film better voted by users.
 ```{r better_voted, echo = TRUE}
 movies_r <- movies_related_revenue %>% select(revenue, budget, vote_average)
 cor(movies_r$revenue, movies_r$vote_average)
@@ -344,7 +342,7 @@ summary(regression_model)
 
 ```
 
-Question 4) After that we will see if the duration of film influence the average of users rating.
+#### Question 4) After that we will see if the duration of film influence the average of users rating.
 ```{r duration_influence_user_rating, echo = TRUE}
 # Numerical value of the correlation
 movies_r <- tmdb_movies_clean %>% select(vote_average, runtime)
@@ -356,7 +354,7 @@ geom_point(shape=1) +
 geom_smooth(method=lm)
 ```
 
-Question 5) The next stage will be analyse the more popular movies genres and how has it changed during years.
+#### Question 5) The next stage will be analyse the more popular movies genres and how has it changed during years.
 ```{r popular_genres_during_years, echo = TRUE}
 # Top3 genres during years
 # Select the top genre for each year
@@ -399,7 +397,7 @@ count(new_genre, "genres")
 
 ```
 
-Question 6) Moreover we will see if old films have better user scores than recent ones.
+#### Question 6) Moreover we will see if old films have better user scores than recent ones.
 ```{r old_films_better_scores, echo = TRUE}
 # Compare films vote_average of films released on 1980 or before with the ones released on 2015 or after.
 tmdb_movies_clean$year <- format(as.Date(tmdb_movies_clean$release_date, format="%Y-%m-%d"),"%Y")
@@ -420,7 +418,7 @@ mean(movies_now$vote_average) # average vote
 sum(movies_now$vote_count) # number of votes
 ```
 
-Question 7) Lastly we will ask if a film can earn a more than 1 billion dollars if the genre is not one of the most popular gender in that year.
+#### Question 7) Lastly we will ask if a film can earn a more than 1 billion dollars if the genre is not one of the most popular gender in that year.
 ```{r film_earn_billion, echo = TRUE}
 # Filter movies with revenue more than 1.000.000.000 dollars
 movies_more_revenue <- tmdb_movies_clean %>% 
@@ -462,7 +460,7 @@ year_genre
 join(movies_more_revenue, year_genre, by ="year")
 ```
 
-Question 8) Finally we will see if the release year influences in the popularity and revenue of a movie.
+#### Question 8) Finally we will see if the release year influences in the popularity and revenue of a movie.
 ```{r release_year_influences_popularity, echo = TRUE}
 tmdb_movies_clean$year <- as.numeric(format(as.Date(tmdb_movies_clean$release_date, format="%Y-%m-%d"),"%Y"))
 
