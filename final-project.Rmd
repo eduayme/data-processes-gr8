@@ -8,14 +8,15 @@ output: ioslides_presentation
 # Movies analysis
 
 ```{r setup, include=FALSE}
+# Load packages
 library("ggplot2")
 library("tidyverse")
 library("ggpubr")
 library("corrplot")
 library("Hmisc")
 
-setwd("~/Documents/UPM/DataProcesses/data-processes-gr8/data/")
-tmdb_movies <- read.csv("tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
+# Load data set
+tmdb_movies <- read.csv("./data/tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
 ```
 
 ## Abstract
@@ -73,6 +74,188 @@ This dataset contains 4803 rows with a total of 20 columns.
 summary(tmdb_movies)
 ```
 
+The most relevant features for this study are Budget, Genres, Revenue, and vote_average. We will use more than these ones but are lees important.
+
+We will clean a bit the data, so we will only use movies with all the fileds completed (no NA data), we wont consider either the movies with budget or revenue that equals 0, as we suppose that this is an error.
+In addition, each film has multiple genres, but we will only consider the first genre of each movie.
+```{r clean, include = FALSE}
+# removing where we have no data to work with
+movies2 <- na.omit(movies)
+view(movies2)
+movies <-movies2
+# theres a lot of films with revenue=0 and busget=0, we donw want this
+movies2 <- movies2 %>% # 
+  filter(budget>0) %>% #
+  filter(revenue>0)
+
+# genres are all in same column, baad, we take only the first genre (the most important i hope)
+Genre <- movies2$genres
+Genre <- as.data.frame(Genre)
+Genre <- separate(Genre, col = Genre, into=c("1","2","3","4","5","6"))
+
+movies2$genres <- Genre$`5`
+movies2 <- na.omit(movies2)
+# we have removed an extra film with no genre
+
+# factor as factor and the column release date as date (spanish format)
+movies2$genres = as.factor(movies2$genres)
+movies2$production_countries = as.factor(movies2$production_countries)
+movies2$status = as.factor(movies2$status)
+```
+
+#### Revenue and budget
+First we will print a graph relating the revenue and budget, and with color information about the vote average, to see if we can se a relationship.
+
+```{r revVSbudgVSvote, echo=FALSE}
+# graph relations between budget and revenue with color as vote average
+plot2 = ggplot(data=movies2, aes(x=budget, y=revenue))
+plot2 + geom_jitter(aes(x=budget,y=revenue, color=vote_average), position=position_jitter(w=.3, h=.0))
+# we dont see anything clear, 2 more graph with vote average
+```
+
+
+We can see that it may exist a relationship between the revenue of a film and the budget invested, but it doesn´t seem like any of those feature is related to vote average in the graph, so let´s print in a separate graph.
+
+```{r relations with revenue, echo=FALSE}
+# graph relations between vote average and revenue
+plot3 = ggplot(data=movies2, aes(x=vote_average, y=revenue))
+plot3 + geom_jitter(aes(x=vote_average, color=revenue), position=position_jitter(w=.3, h=.0)) -> p1
+
+# graph relations between budget and vote average
+plot4 = ggplot(data=movies2, aes(x=vote_average, y=budget))
+plot4 + geom_jitter(aes(x=vote_average, color=budget), position=position_jitter(w=.3, h=.0)) -> p2
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+We can see it clearer now, and we can appreciate that it is possible that there is a relationship between the vote average and the revenue, but doesn´t seem like that with the budget.
+
+We are going to compare these features with the genre of the film, so we can see if action movies earn more mony than others genres movies.
+
+#### Genre
+Lets see if there is a relation between genre and revenue, so we can compare if a genre is better to make money than other.
+```{r violin}
+gen_vot <- ggplot(movies2, aes(x=genres, y=revenue),las=2) + 
+  geom_violin()
+gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+We can see than Action, Drama and Science-Fiction make a lot more money than the others movie genres. To making a better comparision, we are now to clean a bit more the data. We are going to keep only the genres more popular (by revenue), and these are:
+ - Action
+ - Adventure
+ - Comedy
+ - Drama 
+ - Family
+ - Fantasy
+ - omance
+ - Science-fiction
+ - Thriller
+ 
+We are going to compare with the vote average too, so we will quit all the movies with few votes.
+ 
+```{r violin2}
+summary(movies2$vote_count)
+```
+There is a big difference between the most voted and the least, so we are not going to use the ones in the first quartile.
+
+```{r clean_votes_and_genres, include= TRUE}
+#there are a lot of films who doesnt have many votes (half of movies have less than 471 votes), we have to use only fimls which have more than 178 votes
+#(1st quartile)
+movies_reduced_votes <- movies2 %>% # data frame to start with
+  filter(vote_count>178)  %>%
+  filter(genres=="Action" | genres=="Adventure" | genres=="Animation" | genres=="Comedy" | genres=="Drama" | genres=="Family" | genres=="Fantasy" | genres=="Romance" | genres=="Thriller" | genres=="Science")
+```
+Once we have a cleaner dataset, we want to compare the genre with revenue and score. In order to do that, we convert the vote average in facotr, so we round the number (it is a 1 to 10, scale).
+
+```{r facet_the_vote, include= TRUE}
+# making a facet with vote integers
+movies_reduced_votes$vote_average = sapply(movies_reduced_votes$vote_average, function(x) floor(x/1))
+movies_reduced_votes$vote_average <- as.factor(movies_reduced_votes$vote_average)
+```
+
+We make a plot now comparing these three variables, to see if there is a pattern.
+```{r plot_violin_by_vote}
+# we only lost like 400 movies, they were not common films then, good
+gen_vot <- ggplot(movies_reduced_votes, aes(x=genres, y=revenue)) + 
+  geom_violin()
+
+gen_vot <- gen_vot+facet_wrap(~vote_average)
+gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+We see than the genres revenue are similar, but when the score rounds the seven, action films earn much more money than the rest. To see if there is a different pattern with the action movies, we are going to do the same graphics than before but only with action movies.
+
+#### Action movies
+We need to clean the data first:
+
+```{r clean_action}
+# lets see revenue vs budget in action films compared to vote score, only for action movies
+action_movies <- movies_reduced_votes %>%
+  filter(genres == "Action")
+```
+
+And lastly we print the same graphs than before
+```{r action_graphs, echo= FALSE}
+# graph relations between busgete and revenue
+plotAction = ggplot(data=movies2, aes(x=budget, y=revenue))
+plotAction + geom_jitter(aes(x=budget, color=revenue), position=position_jitter(w=.3, h=.0))
+
+gen_vot <- ggplot(action_movies, aes(x=budget, y=revenue)) + 
+  geom_violin()
+gen_vot <- gen_vot+facet_wrap(~vote_average)
+gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# grid.arrange(p1, p2, ncol = 2)
+# Movies than have an 8 as a vote_average don't earn a lot or few money. We can also see that the ones that earn a lot of money they have an average budget.
+```
+
+The first graph is the same that the one considering all genres, so it is no usefull for the study. However, we can see that in action films it is possible that the revenue is indeed related with the vote_average, so as the vote average rise, there are more films which have more revenue. The exception is the movies with more than an 8. These movies doesn´t have a big revenue, but they doen´t invest too much money in the budget neither, so they are likely profitable.
+
+#### Money vs Time
+We are going to plot some graphs tto see if there is a tendency to invest or earn more money with time. We are going to consider all the movies.
+
+```{r clean_date, echo=FALSE}
+####################### compare revenue with year
+movies2$release_date <- as.Date(movies2$release_date, "%Y-%m-%d")
+#head(movies2)
+
+p4 <- ggplot(movies2, aes(x=release_date, y=revenue)) +
+  geom_point(color="steelblue") +
+  xlab("")
+
+p5 <- ggplot(movies2, aes(x=release_date, y=budget)) +
+  geom_point(color="steelblue") +
+  xlab("")
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+Seems like indeed there is more money invested each year. To have a clearer view, we have to plot the graph with only the median value, not with all the films.
+
+```{r mean_year, echo=FALSE}
+# first mutate to obtain the mean, then plot.
+movies3 <- movies2 %>%
+  mutate( year = format(release_date, "%Y")) %>%
+  group_by( year) %>%
+  mutate(revenue_mean=mean(revenue)) %>%
+  mutate(budget_mean=mean(budget)) 
+# summarise(total = mean(revenue))
+
+p7 <- ggplot(movies3, aes(x=release_date, y=revenue_mean)) +
+  geom_point() +
+  geom_line(color="steelblue")+
+  xlab("")
+
+p8 <- ggplot(movies3, aes(x=release_date, y=budget_mean)) +
+  geom_point() +
+  geom_line(color="steelblue")+
+  xlab("")
+  
+grid.arrange(p7, p8, ncol = 2)
+```
+
+It is obvious that, despite of the exception in the 20s years, the budget increase each year. In the revenue is not that obvious and it is possible that we need to do a time series analysis to be sure, but the tendency is increasing too.
+
+
 ## Questions of interest
 - What attributes makes the film better (with better we refer to the money earned, the popularity, the ratings)?
 - Does the duration of film influence the average of users rating?
@@ -114,6 +297,8 @@ ggplot(movies_related_revenue, aes(x=revenue, y=budget))+
   labs(x = "Revenue", y="Budget", title="Relation between Revenue and Badget")
 
 regression_model = lm(formula = revenue ~ budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+
+summary(regression_model)
 # Compare *revenue* with *genres*
 
 # Compare *revenue* with *product_companies*
@@ -180,8 +365,19 @@ Question 6) Moreover we will see if old films have better user scores than recen
 
 ```
 
-Question 7) Lastly we will ask if a film can earn a more than 100 million dollars if the genre is not one of the top3 popular gender in that year.
+Question 7) Lastly we will ask if a film can earn a more than 100 million dollars if the genre is not one of the most popular gender in that year.
 ```{r movies, echo = TRUE}
+# Filter movies with revenue more than 100.000.000
+movies_more_revenue <- tmdb_movies_clean %>% 
+                       filter(revenue>100000000)
+
+# Select years from dates of the movies with more revenue
+years <- format(as.Date(movies_more_revenue$Release_date, format="%d/%m/%Y"),"%Y")
+
+# Select the top genre for each year
+
+
+# Compare the genre of each film with the top genre of the release year
 
 ```
 
