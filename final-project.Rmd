@@ -219,9 +219,8 @@ The first graph is the same that the one considering all genres, so it is no use
 We are going to plot some graphs tto see if there is a tendency to invest or earn more money with time. We are going to consider all the movies.
 
 ```{r clean_date, echo=FALSE}
-####################### compare revenue with year
+# compare revenue with year
 movies2$release_date <- as.Date(movies2$release_date, "%Y-%m-%d")
-#head(movies2)
 
 p4 <- ggplot(movies2, aes(x=release_date, y=revenue)) +
   geom_point(color="steelblue") +
