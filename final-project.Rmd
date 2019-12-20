@@ -417,6 +417,32 @@ About the machine learning algorithm, we just have used two types:
 
 
 
+We had to compare how well the variable score is predicted by:
+-	The runtime --> we have had the next output:
+
+``> correlation_accuracy
+             actuals predicteds
+actuals    1.0000000  0.4146759
+predicteds 0.4146759  1.0000000
+> regr.eval(actuals_preds$actuals, actuals_preds$predicteds)
+      mae       mse      rmse      mape 
+0.6087162 0.6002294 0.7747448 0.1022778 
+``
+
+Seeing the correlation index and the rmse, we can conclude that the variables have a similar directional movement. Using the rmse, we can see that the mean error is too low, so the variables are correlated.
+
+-	The release date --> we have had the next output:
+``> correlation_accuracy
+             actuals predicteds
+actuals    1.0000000  0.1650971
+predicteds 0.1650971  1.0000000
+> regr.eval(actuals_preds$actuals, actuals_preds$predicteds)
+      mae       mse      rmse      mape 
+0.6569323 0.7043607 0.8392620 0.1111245 
+``
+
+In this case, the correlation between the data observed and predicted is two low, so we can’t conclude that both variables are correlated.
+
 ## Discussion and Future work
 
 
