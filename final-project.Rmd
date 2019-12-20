@@ -22,19 +22,17 @@ library("FactoMineR") # PCA computation
 library("factoextra") # nice plotting for PCA objects
 library("gridExtra")  # to build grid of plots
 library("plyr")       # join function
+library("knitr")      # publish markdown
 
 # Load data set
 tmdb_movies <- read.csv("./data/tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
 ```
 
 ## Abstract
---
+This analysis was conducted to illustrate some important and curious facts about something that has been fascinating people for more than 100 years. Since Lumiere brothers created the first short film this industry has evolved a lot. Nowadays, with the internet, we have been surrounded by movies every day so we thought it would be interesting to go a little bit further about the data that it has behind. Can producers predict what people will prefer in the future in the cinema industry? Have most popular films any pattern to be most preferred? In this study, we will answer some questions like those and go deep in movies data, analysing and predicting some films attributes.
 
 ## Introduction and Related work
-Cinema is the most complex and powerful art form in the present world. It can help us to better
-understand our own lives, the lives of those around us and even how our society and culture operate. They can
-shed light on political and spiritual matters too and can provide catharsis and perspective and may open our
-eyes to new ways of thinking, feeling and pursuing our lives. This is why, in our way, we want to pay tribute with this movies analysis. Why we love some movies and hate others? We will conduct a study to try to understand better how movies and people are really connected.
+Cinema is the most complex and powerful art form in the present world. It can help us to better understand our own lives, the lives of those around us and even how our society and culture operate. They can shed light on political and spiritual matters too, and can provide catharsis and perspective and may open our eyes to new ways of thinking, feeling and pursuing our lives. This is why, in our way, we want to pay tribute with this movies analysis. Why we love some movies and hate others? We will conduct a study to try to understand better how movies and people are really connected.
 
 We have found some inspirational data science projects related to this domain:
 
@@ -285,12 +283,11 @@ Question 1) First we will see which attribute makes the film earn more money.
 
 Step 1.1) Select rows that we will use. In this case the earn money (*revenue*) are related to the variables *budget*, *genres*, *production companies*, *release date* and *spoken languages*.
 ```{r revenue_related, echo = TRUE}
-movies_related_revenue <- tmdb_movies_clean %>% select(revenue, budget, genres, popularity, production_companies, release_date, spoken_languages)
+movies_related_revenue <- tmdb_movies_clean %>% select(revenue, budget, genres, popularity, production_companies, release_date, vote_average, spoken_languages)
 ```
 
 Step 1.2) Compare the variable *revenue* with other variables.
 ```{r compare_revenue_budget, echo = TRUE}
-# Compare *revenue* with *budget*
 movies_r <- movies_related_revenue %>% select(revenue, budget)
 cor(movies_r$revenue, movies_r$budget)
 
@@ -306,7 +303,6 @@ summary(regression_model)
 
 Question 2) Secondly we will see which attribute makes the film more popular in the TMBD website.
 ```{r more_popular, echo = TRUE}
-# Compare *popularity* with *revenue*
 movies_r <- movies_related_revenue %>% select(revenue, popularity)
 cor(movies_r$revenue, movies_r$popularity)
 
@@ -318,20 +314,31 @@ ggplot(movies_related_revenue, aes(x=revenue, y=popularity))+
 regression_model = lm(formula = revenue ~ popularity + budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
 
 summary(regression_model)
-
-# Compare *popularity* with *budget*
-
-# Compare *popularity* with *genres*
-
 ```
 
 Question 3) Now we will see which attribute makes the film better voted by users.
 ```{r better_voted, echo = TRUE}
-# Compare *vote_average* with *revenue*
+movies_r <- movies_related_revenue %>% select(revenue, budget, vote_average)
+cor(movies_r$revenue, movies_r$vote_average)
+cor(movies_r$budget, movies_r$vote_average)
 
-# Compare *vote_average* with *budget*
+ggplot(movies_related_revenue, aes(x=revenue, y=vote_average))+
+  geom_point()+
+  geom_smooth(method=lm)+
+  labs(x="Revenue", y="Vote average", title="Relation between Revenue and Vote average")
 
-# Compare *vote_average* with *genres*
+regression_model = lm(formula = revenue ~ vote_average + budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+
+summary(regression_model)
+
+ggplot(movies_related_revenue, aes(x=budget, y=vote_average))+
+  geom_point()+
+  geom_smooth(method=lm)+
+  labs(x="Budget", y="Vote average", title="Relation between Budget and Vote average")
+
+regression_model = lm(formula = budget ~ vote_average + revenue + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+
+summary(regression_model)
 
 ```
 
@@ -470,7 +477,7 @@ For the pre-processing stage, we have made some transformations:
 - Delete missing values for target variables, such as revenue, vote or popularity, in order to train the model correctly.
 The final data frame looks like this:
 
-``
+```
      budget original_language popularity release_date    revenue runtime   status vote_average vote_count name_length tagline_length
 1 237000000                en  150.43758   2009-12-10 2787965087     162 Released          7.2      11800           6             27
 2 300000000                en  139.08262   2007-05-19  961000000     169 Released          6.9       4500          40             46
@@ -478,14 +485,106 @@ The final data frame looks like this:
 4 250000000                en  112.31295   2012-07-16 1084939099     165 Released          7.6       9106          21             15
 5 260000000                en   43.92699   2012-03-07  284139100     132 Released          6.1       2124          11             36
 6 258000000                en  115.69981   2007-05-01  890871626     139 Released          5.9       3576          12             18
-``
+```
+About the machine learning algorithm, we just have used two types:
+- Linear regression algorithm for the regression related questions. This algorithm allows seeing how well a variable (in this particular project, the runtime and release date) can predict score value.
+- KNN algorithm to classify the data into clusters by the revenue and see the clusters proprieties.
+
 
 ## Results
 
 ### Strength of relationships
 
+#### Question 1)
+The variable that have more influency to the *revenue* is the *budget* variable. The one that gets closer to 1 or -1 with the correlation test is the most related. Budget is the higher with 0.7053993
+| *Budget* | *Genres* | *Popularity* | *Release_date* | *Spoken_languages* |
+| :------: | :------: | :----------: | :------------: | :----------------: |
+| 0.705399 | 0.362128 | -0.428725    | 0.229568       | 0.037188           |
+
+#### Question 2)
+The variable that influences more to the popularity of the film is the *revenue*. The one that gets closer to 1 or -1 with the correlation test is the most related. Revenue is the higher with 0.602245
+| *Revenue* | *Genres* | *Popularity* | *Release_date* | *Spoken_languages* |
+| :-------: | :------: | :----------: | :------------: | :----------------: |
+| 0.602245  | 0.294614 | -0.371995    | 0.487992       | -0.152934          |
+
+#### Question 3)
+The variable that influences more to get better average mark by users is the *popularity* variable. The one that gets closer to 1 or -1 with the correlation test is the most related. Popularity is the higher with 0.3185934.
+| *Budget*    | *Revenue* | *Genres* | *Popularity* | *Release_date* | *Spoken_languages* |
+| :---------: | :-------: |:-------: | :----------: | :------------: | :----------------: |
+| -0.03120827 | 0.187839  | 0.028153 | 0.3185934    | 0.0051984      | -0.0018729         |
+
+#### Question 4)
+Here we demonstrate that the duration of film doesn't influence the average of users rating. There is no relation between this 2 factors.
+
+#### Question 5)
+We split the years in 3 clusters: before 1980, between 1980 and 2014 and after 2015.
+
+- Top3 genres before 1980:
+1) Drama
+2) Action and Comedy (equal number of films)
+
+- Top3 genres between 1980 and 2014:
+1) Drama
+2) Comedy
+3) Action
+
+- Top3 genres after 2015:
+1) Action
+2) Drama
+3) Comedy
+
+#### Question 6)
+We can see in the results than old films have better user score than the new ones in general. In this case we need to point out that we have more or less the same number of films in both clusters nevertheless old films have aproximately 33% less user reviews than the new ones.
+|                          | *Number of rows* | *Average of votes* | *Number of votes* |
+| :----------------------: | :--------------: | :----------------: | :---------------: |
+| *Old movies (<=1980)*    | 219              | 6.93105            | 124385            |
+| *recent movies (>=2015)* | 193              | 6.20725            | 321932            |
+
+#### Question 7)
+In the results we can see that is difficult that a film can earn more than 1 billion dollars if the genre is not one of the most popular gender in that year.
+| *Number films more than $1B* | *Same genre as the popular in that year*   | *Different genre than the popular in that year* |
+| :--------------------------: | :----------------------------------------: | :---------------------------------------------: |
+| 21                           | 18                                         | 3
+
+#### Question 8)
+Here we can see that the release year does not influence in the popularity and revenue of a movie.
+
+
 ### Prediction
 
+We had to compare how well the variable score is predicted by:
+- The runtime --> we have had the next output:
+
+``> correlation_accuracy
+             actuals predicteds
+actuals    1.0000000  0.4146759
+predicteds 0.4146759  1.0000000
+> regr.eval(actuals_preds$actuals, actuals_preds$predicteds)
+      mae       mse      rmse      mape 
+0.6087162 0.6002294 0.7747448 0.1022778 
+``
+
+Seeing the correlation index and the rmse, we can conclude that the variables have a similar directional movement. Using the rmse, we can see that the mean error is too low, so the variables are correlated.
+
+- The release date --> we have had the next output:
+``> correlation_accuracy
+             actuals predicteds
+actuals    1.0000000  0.1650971
+predicteds 0.1650971  1.0000000
+> regr.eval(actuals_preds$actuals, actuals_preds$predicteds)
+      mae       mse      rmse      mape 
+0.6569323 0.7043607 0.8392620 0.1111245 
+``
+
+In this case, the correlation between the data observed and predicted is two low, so we can’t conclude that both variables are correlated.
+
 ## Discussion and Future work
+The implications of the research are directly related with the film industry or the film critics. The success (votes and views) of the film is influenced by revenues, release date or the duration of the film. Knowing this productors can study all factors to try to earn more money, get better critics or improve the popularity of the movie.
+
+The future work could be divided, mainly, in two main fields:
+
+On one hand, the idea is to explore other possible relations between attributes, for example between the title length and the average vote. Hence, we could find answers to newer questions, like, for example, if the title of the film influences the positive votes or the total views of the film. Even more, we could find the semantic similarities between the words of the title of the most popular films.
+
+On the other hand, the exploration of new algorithms to use, in order to predict with more accuracy, could be a more technical part of the future work. Not only the use of other machine learning techniques but also  the employment of deep learning, smarter statistics, etc.
 
 
