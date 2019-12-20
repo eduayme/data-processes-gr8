@@ -1,19 +1,20 @@
 #Set WorkSpece
-setwd("D:/AplicacionesInformaticas/workspaceR")
+rm(list = ls())
+#setwd("D:/AplicacionesInformaticas/workspaceR")
 
 #Load DataSet
 Sys.setlocale("LC_ALL","English")
-Movies <- read.csv(file="./tmdb_5000_movies.csv" , header = TRUE , sep = ",")
+Movies <- read.csv(file="./data/tmdb_5000_movies.csv" , header = TRUE , sep = ",")
 
 #Install and library packages
-install.packages("lattice")
-install.packages("ggplot2")
-install.packages("caret")
-install.packages("dplyr")
-install.packages("stringr")
-install.packages("rpart")
-install.packages("rpart.plot")
-install.packages("ggvis")
+#install.packages("lattice")
+#install.packages("ggplot2")
+#install.packages("caret")
+#install.packages("dplyr")
+#install.packages("stringr")
+#install.packages("rpart")
+#install.packages("rpart.plot")
+#install.packages("ggvis")
 
 library(lattice)
 library(ggplot2)
