@@ -25,29 +25,57 @@ library(stringr)
 library(rpart.plot)
 library(ggvis)
 
-#Clean the dataset
-Movies$homepage <- NULL
-Movies$id <- NULL
-Movies$keywords <- NULL
-Movies$original_language <- NULL
-Movies$original_title <- NULL
-Movies$overview <- NULL
-Movies$production_companies <- NULL
-Movies$production_countries <- NULL
+# PREPROCESSING DATA
+
 Movies$spoken_languages <- NULL
-Movies <- na.omit(Movies)
+Movies$title <- NULL
+Movies$homepage <- NULL
+Movies$overview <- NULL
+Movies$keywords <- NULL
+Movies$genres <- NULL
+Movies$production_countries <- NULL
+Movies$production_companies <- NULL
+
+Movies <- Movies %>%
+  mutate(original_language = factor(original_language), )
 ##we wont consider either the movies with budget or revenue that equals 0, as we suppose that this is an error.
-Movies <- Movies[Movies$budget>0,]
-Movies <- Movies[Movies$revenue>0,]
+Movies$name_length <- str_length(Movies$original_title)
+Movies$original_title <- NULL
+
+Movies$tagline_length <- str_length(Movies$tagline)
+Movies$tagline <- NULL
+
+Movies <- subset(Movies,  popularity!=0 & revenue!=0 & vote_count!=0)
+head(Movies)
+
 ##Create a data frame from Movies Dataset
 dfMovies <- data.frame(Movies)
   
 ##Using a grid search to find the best parameters for you model of interest
 ##At the first,we should use the function of package "caret" to create test data and train data.
 #Simple random sampling
-smp1 <- sample(nrow(Movies),300,replace = FALSE)
-train_data <- Movies[-smp1,]
-test_data <- Movies[smp1,]
+set.seed(123)
+
+trainIndex <- createDataPartition(
+  dfMovies$vote_average, # Sample proportionally based on the outcome variable
+  p = .8, # Percentage to be used for training
+  list = FALSE, # Return the indices as a vector (not a list)
+  times = 1 # Only create one set of indices
+)
+
+# Subset your data into training and testing set
+training_set <- movies[ trainIndex, ] # Use indices to get training data
+test_set <- movies[ -trainIndex, ] # Remove train indices to get test data
+
+# Specify cross validation approach: 10 fold CV
+fitControl <- trainControl(
+  method = "cv", # Cross validation
+  number = 10 # 10 fold
+)
+
+
+
+# -----------------------HASTA AQUÍ BIEN---------------------------------------
 
 #Specify cross validation approach:10 fold CV
 fitControl <- trainControl(method = "cv",
@@ -265,3 +293,4 @@ summary(RevenueAndTimeFit)
 RevenueNewData2 <- data.frame(revenue = dfRevenueAndTime$revenue)
 RevenueAndTimePredicted <- predict(RevenueAndTimeFit,newdata = RevenueNewData2)
 rpart.plot(RevenueAndTimeFit,branch=1,shadow.col = "gray",box.col="green",border.col="blue",split.col="red",split.cex=1.2)
+

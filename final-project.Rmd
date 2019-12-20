@@ -464,6 +464,22 @@ movies_r
 
 ### Prediction
 
+For the pre-processing stage, we have made some transformations:
+ - Remove irrelevant variables, such as name (the variable id identifies each entry), keywords and some variables, which format transformation exceeds the scope of this project.
+- Convert the name and description attributes, that could be interpreted as categorical variables, to a new field which contains the length of its name/description, in order to find fi this length is relevant for the model.
+- Delete missing values for target variables, such as revenue, vote or popularity, in order to train the model correctly.
+The final data frame looks like this:
+
+``
+     budget original_language popularity release_date    revenue runtime   status vote_average vote_count name_length tagline_length
+1 237000000                en  150.43758   2009-12-10 2787965087     162 Released          7.2      11800           6             27
+2 300000000                en  139.08262   2007-05-19  961000000     169 Released          6.9       4500          40             46
+3 245000000                en  107.37679   2015-10-26  880674609     148 Released          6.3       4466           7             21
+4 250000000                en  112.31295   2012-07-16 1084939099     165 Released          7.6       9106          21             15
+5 260000000                en   43.92699   2012-03-07  284139100     132 Released          6.1       2124          11             36
+6 258000000                en  115.69981   2007-05-01  890871626     139 Released          5.9       3576          12             18
+``
+
 ## Results
 
 ### Strength of relationships
