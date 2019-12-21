@@ -1,6 +1,6 @@
 ---
 title: "Final project - Data Processes UPM 2019/2020"
-author: "Eduard Aymerich, Fernando Alonso, Rafael Timermans, Bowen Huang y Jaime Acosta"
+author: "Eduard Aymerich, Fernando Alonso, Rafael Timermans, Bowen Huang and Jaime Acosta"
 date: "12/16/2019"
 output: html_document
 ---
@@ -23,6 +23,8 @@ library("factoextra") # nice plotting for PCA objects
 library("gridExtra")  # to build grid of plots
 library("plyr")       # join function
 library("knitr")      # publish markdown
+
+knitr::opts_chunk$set(echo = T, results = "hide", warning=FALSE, message=FALSE)
 
 # Load data set
 tmdb_movies <- read.csv("./data/tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
@@ -146,6 +148,7 @@ gen_vot <- ggplot(movies2, aes(x=genres, y=revenue),las=2) +
   geom_violin()
 gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
+
 We can see than Action, Drama and Science-Fiction make a lot more money than the others movie genres. To making a better comparision, we are now to clean a bit more the data. We are going to keep only the genres more popular (by revenue), and these are:
  - 1) Action
  - 2) Adventure
@@ -161,15 +164,17 @@ We are going to compare with the vote average too, so we will quit all the movie
 ```{r violin2}
 summary(movies2$vote_count)
 ```
+
 There is a big difference between the most voted and the least, so we are not going to use the ones in the first quartile.
 
 ```{r clean_votes_and_genres, include= TRUE}
-#there are a lot of films who doesnt have many votes (half of movies have less than 471 votes), we have to use only fimls which have more than 178 votes
-#(1st quartile)
+# there are a lot of films who doesnt have many votes (half of movies have less than 471 votes), we have to use only fimls which have more than 178 votes
+# (1st quartile)
 movies_reduced_votes <- movies2 %>% # data frame to start with
   filter(vote_count>178)  %>%
   filter(genres=="Action" | genres=="Adventure" | genres=="Animation" | genres=="Comedy" | genres=="Drama" | genres=="Family" | genres=="Fantasy" | genres=="Romance" | genres=="Thriller" | genres=="Science")
 ```
+
 Once we have a cleaner dataset, we want to compare the genre with revenue and score. In order to do that, we convert the vote average in facotr, so we round the number (it is a 1 to 10, scale).
 
 ```{r facet_the_vote, include= TRUE}
@@ -187,6 +192,7 @@ gen_vot <- ggplot(movies_reduced_votes, aes(x=genres, y=revenue)) +
 gen_vot <- gen_vot+facet_wrap(~vote_average)
 gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
+
 We see than the genres revenue are similar, but when the score rounds the seven, action films earn much more money than the rest. To see if there is a different pattern with the action movies, we are going to do the same graphics than before but only with action movies.
 
 #### Action movies
@@ -210,6 +216,7 @@ gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # grid.arrange(p1, p2, ncol = 2)
 ```
+
 Movies than have an 8 as a vote_average don't earn a lot or few money. We can also see that the ones that earn a lot of money they have an average budget.
 
 The first graph is the same that the one considering all genres, so it is no usefull for the study. However, we can see that in action films it is possible that the revenue is indeed related with the vote_average, so as the vote average rise, there are more films which have more revenue. The exception is the movies with more than an 8. These movies doesn´t have a big revenue, but they doen´t invest too much money in the budget neither, so they are likely profitable.
@@ -231,6 +238,7 @@ p5 <- ggplot(movies2, aes(x=release_date, y=budget)) +
 
 grid.arrange(p4, p5, ncol = 2)
 ```
+
 Seems like indeed there is more money invested each year. To have a clearer view, we have to plot the graph with only the median value, not with all the films.
 
 ```{r mean_year, echo=FALSE}
@@ -254,6 +262,7 @@ p8 <- ggplot(movies3, aes(x=release_date, y=budget_mean)) +
   
 grid.arrange(p7, p8, ncol = 2)
 ```
+
 It is obvious that, despite of the exception in the 20s years, the budget increase each year. In the revenue is not that obvious and it is possible that we need to do a time series analysis to be sure, but the tendency is increasing too.
 
 
@@ -269,7 +278,7 @@ It is obvious that, despite of the exception in the 20s years, the budget increa
 
 ### Strength of relationships
 First we will clean the data
-```{r clean_data, echo = TRUE}
+```{r clean_data, echo = FALSE}
 #### Remove budget higher from 0 and revenue higher than 0
 tmdb_movies_clean <- tmdb_movies %>% 
                      filter(budget>0) %>% 
@@ -295,7 +304,9 @@ ggplot(movies_related_revenue, aes(x=revenue, y=budget))+
   geom_point()+
   geom_smooth(method=lm)+
   labs(x="Revenue", y="Budget", title="Relation between Revenue and Badget")
+```
 
+```{r compare_revenue_budget2, eval=FALSE, include=TRUE}
 regression_model = lm(formula = revenue ~ budget + genres + popularity + production_companies + release_date + spoken_languages, data=movies_related_revenue)
 
 summary(regression_model)
@@ -310,7 +321,9 @@ ggplot(movies_related_revenue, aes(x=revenue, y=popularity))+
   geom_point()+
   geom_smooth(method=lm)+
   labs(x="Revenue", y="Popularity", title="Relation between Revenue and Popularity")
+```
 
+```{r more_popular2, eval=FALSE, include=TRUE}
 regression_model = lm(formula = revenue ~ popularity + budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
 
 summary(regression_model)
@@ -326,20 +339,25 @@ ggplot(movies_related_revenue, aes(x=revenue, y=vote_average))+
   geom_point()+
   geom_smooth(method=lm)+
   labs(x="Revenue", y="Vote average", title="Relation between Revenue and Vote average")
+```
 
+```{r better_voted2, eval=FALSE, include=TRUE}
 regression_model = lm(formula = revenue ~ vote_average + budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
 
 summary(regression_model)
+```
 
+```{r better_voted3, echo = TRUE}
 ggplot(movies_related_revenue, aes(x=budget, y=vote_average))+
   geom_point()+
   geom_smooth(method=lm)+
   labs(x="Budget", y="Vote average", title="Relation between Budget and Vote average")
+```
 
+```{r better_voted4, eval=FALSE, include=TRUE}
 regression_model = lm(formula = budget ~ vote_average + revenue + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
 
 summary(regression_model)
-
 ```
 
 #### Question 4) After that we will see if the duration of film influence the average of users rating.
@@ -394,7 +412,6 @@ count(new_genre, "genres")
 # 1) Action
 # 2) Drama
 # 3) Comedy
-
 ```
 
 #### Question 6) Moreover we will see if old films have better user scores than recent ones.
@@ -419,7 +436,7 @@ sum(movies_now$vote_count) # number of votes
 ```
 
 #### Question 7) Lastly we will ask if a film can earn a more than 1 billion dollars if the genre is not one of the most popular gender in that year.
-```{r film_earn_billion, echo = TRUE}
+```{r film_earn_billion, eval=FALSE, include=TRUE}
 # Filter movies with revenue more than 1.000.000.000 dollars
 movies_more_revenue <- tmdb_movies_clean %>% 
                        filter(revenue>1000000000)
@@ -454,7 +471,6 @@ year_top_genre <- year_top_genre %>% select(genres, year)
 
 year_genre <- year_top_genre %>% select(year, genres) %>% 
               group_by(year)
-year_genre
 
 # Compare the genre of each film with the top genre of the release year
 join(movies_more_revenue, year_genre, by ="year")
@@ -473,19 +489,22 @@ cor(movies_r$year, movies_r$revenue)
 ### Prediction
 
 For the pre-processing stage, we have made some transformations:
+
  - Remove irrelevant variables, such as name (the variable id identifies each entry), keywords and some variables, which format transformation exceeds the scope of this project.
+ 
 - Convert the name and description attributes, that could be interpreted as categorical variables, to a new field which contains the length of its name/description, in order to find fi this length is relevant for the model.
+
 - Delete missing values for target variables, such as revenue, vote or popularity, in order to train the model correctly.
 The final data frame looks like this:
 
 ```
-     budget original_language popularity release_date    revenue runtime   status vote_average vote_count name_length tagline_length
-1 237000000                en  150.43758   2009-12-10 2787965087     162 Released          7.2      11800           6             27
-2 300000000                en  139.08262   2007-05-19  961000000     169 Released          6.9       4500          40             46
-3 245000000                en  107.37679   2015-10-26  880674609     148 Released          6.3       4466           7             21
-4 250000000                en  112.31295   2012-07-16 1084939099     165 Released          7.6       9106          21             15
-5 260000000                en   43.92699   2012-03-07  284139100     132 Released          6.1       2124          11             36
-6 258000000                en  115.69981   2007-05-01  890871626     139 Released          5.9       3576          12             18
+   budget   ori_lan popularity release_date    revenue   runtime  status   vote_av. vote_count name_l tagline_l
+1 237000000   en    150.43758   2009-12-10   2787965087    162   Released    7.2      11800      6       27
+2 300000000   en    139.08262   2007-05-19   961000000     169   Released    6.9       4500      40      46
+3 245000000   en    107.37679   2015-10-26   880674609     148   Released    6.3       4466      7       21
+4 250000000   en    112.31295   2012-07-16   1084939099    165   Released    7.6       9106      21      15
+5 260000000   en     43.92699   2012-03-07   284139100     132   Released    6.1       2124      11      36
+6 258000000   en    115.69981   2007-05-01   890871626     139   Released    5.9       3576      12      18
 ```
 
 About the machine learning algorithm, we just have used two types:
@@ -498,22 +517,28 @@ About the machine learning algorithm, we just have used two types:
 ### Strength of relationships
 
 #### Question 1)
-The variable that have more influency to the *revenue* is the *budget* variable. The one that gets closer to 1 or -1 with the correlation test is the most related. Budget is the higher with 0.7053993
+The variable that have more influency to the *revenue* is the *budget* variable. The one that gets closer to 1 or -1 with the correlation test is the most related. Budget is the higher with 0.7053993.
+
 | *Budget* | *Genres* | *Popularity* | *Release_date* | *Spoken_languages* |
 | :------: | :------: | :----------: | :------------: | :----------------: |
 | 0.705399 | 0.362128 | -0.428725    | 0.229568       | 0.037188           |
 
+
 #### Question 2)
-The variable that influences more to the popularity of the film is the *revenue*. The one that gets closer to 1 or -1 with the correlation test is the most related. Revenue is the higher with 0.602245
+The variable that influences more to the popularity of the film is the *revenue*. The one that gets closer to 1 or -1 with the correlation test is the most related. Revenue is the higher with 0.602245.
+
 | *Revenue* | *Genres* | *Popularity* | *Release_date* | *Spoken_languages* |
 | :-------: | :------: | :----------: | :------------: | :----------------: |
 | 0.602245  | 0.294614 | -0.371995    | 0.487992       | -0.152934          |
 
+
 #### Question 3)
 The variable that influences more to get better average mark by users is the *popularity* variable. The one that gets closer to 1 or -1 with the correlation test is the most related. Popularity is the higher with 0.3185934.
+
 | *Budget*    | *Revenue* | *Genres* | *Popularity* | *Release_date* | *Spoken_languages* |
 | :---------: | :-------: |:-------: | :----------: | :------------: | :----------------: |
 | -0.03120827 | 0.187839  | 0.028153 | 0.3185934    | 0.0051984      | -0.0018729         |
+
 
 #### Question 4)
 We get a correlation of 0.3786415 between the duration of the film and the average of users rating. This means there is almost no relation between this 2 factors. We can see it a graphic representation here:
@@ -542,47 +567,62 @@ We split the years in 3 clusters: before 1980, between 1980 and 2014 and after 2
 
 #### Question 6)
 We can see in the results than old films have better user score than the new ones in general. In this case we need to point out that we have more or less the same number of films in both clusters nevertheless old films have aproximately 33% less user reviews than the new ones.
-|                          | *Number of rows* | *Average of votes* | *Number of votes* |
-| :----------------------: | :--------------: | :----------------: | :---------------: |
-| *Old movies (<=1980)*    | 219              | 6.93105            | 124385            |
-| *recent movies (>=2015)* | 193              | 6.20725            | 321932            |
+
+|                            | *Number of rows* | *Average of votes* | *Number of votes* |
+| :------------------------: | :--------------: | :----------------: | :---------------: |
+| **Old movies (<=1980)**    | 219              | 6.93105            | 124385            |
+| **recent movies (>=2015)** | 193              | 6.20725            | 321932            |
+
 
 #### Question 7)
 In the results we can see that is difficult that a film can earn more than 1 billion dollars if the genre is not one of the most popular gender in that year.
+
 | *Number films more than $1B* | *Same genre as the popular in that year*   | *Different genre than the popular in that year* |
 | :--------------------------: | :----------------------------------------: | :---------------------------------------------: |
 | 21                           | 18                                         | 3
 
+
 #### Question 8)
 Here we can see that the release year does not influence in the popularity and revenue of a movie as both correlations numbers are close to 0.
+
 | *Popularity* | *Revenue* |
 | :----------: | :-------: |
 | 0.1613506    | 0.1474426 |
 
+
 ### Prediction
 
 We had to compare how well the variable score is predicted by:
+
 - The runtime --> we have had the next output:
-``> correlation_accuracy
+
+``` correlation_accuracy
+
              actuals predicteds
 actuals    1.0000000  0.4146759
 predicteds 0.4146759  1.0000000
+
 > regr.eval(actuals_preds$actuals, actuals_preds$predicteds)
       mae       mse      rmse      mape 
 0.6087162 0.6002294 0.7747448 0.1022778 
-``
+
+```
 
 Seeing the correlation index and the rmse, we can conclude that the variables have a similar directional movement. Using the rmse, we can see that the mean error is too low, so the variables are correlated.
 
 -	The release date --> we have had the next output:
-``> correlation_accuracy
+
+``` correlation_accuracy
+
              actuals predicteds
 actuals    1.0000000  0.1650971
 predicteds 0.1650971  1.0000000
+
 > regr.eval(actuals_preds$actuals, actuals_preds$predicteds)
       mae       mse      rmse      mape 
 0.6569323 0.7043607 0.8392620 0.1111245 
-``
+
+```
 
 In this case, the correlation between the data observed and predicted is two low, so we can’t conclude that both variables are correlated.
 
