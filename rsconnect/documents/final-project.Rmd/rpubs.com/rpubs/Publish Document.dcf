@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/561740/57e94352a2ff4270a3716c5d35499c96
+bundleId: https://api.rpubs.com/api/v1/document/561740/57e94352a2ff4270a3716c5d35499c96
+url: http://rpubs.com/eduayme/561740
+when: 1576893577.20355

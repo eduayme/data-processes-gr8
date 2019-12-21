@@ -1,28 +1,40 @@
 ---
 title: "Final project - Data Processes UPM 2019/2020"
-author: "Eduard Aymerich, Fernando Alonso, Rafael Timermans, Bowen Huang y Jaime Acosta"
+author: "Eduard Aymerich, Fernando Alonso, Rafael Timermans, Bowen Huang and Jaime Acosta"
 date: "12/16/2019"
-output: ioslides_presentation
+output: html_document
 ---
 
 # Movies analysis
 
 ```{r setup, include=FALSE}
-library(ggplot2)
+# Load packages
+library("ggplot2")
+library("ggpubr")
+library("corrplot")
+library("Hmisc")
+library("dplyr")
+library("vcd")
+library("tidyr")
+library("tidyverse")  #data manipilation
+library("GGally")     # nice scatterplot matrix
+library("FactoMineR") # PCA computation
+library("factoextra") # nice plotting for PCA objects
+library("gridExtra")  # to build grid of plots
+library("plyr")       # join function
+library("knitr")      # publish markdown
 
-setwd("~/Documents/UPM/DataProcesses/data-processes-gr8/data/")
-top_1000_imbd_movies <- read.table("IMDB-Movies-Data.csv", header = TRUE, sep = ",", fill = TRUE)
-top_5000_tmdb_movies <- read.table("tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
+knitr::opts_chunk$set(echo = T, results = "hide", warning=FALSE, message=FALSE)
+
+# Load data set
+tmdb_movies <- read.csv("./data/tmdb_5000_movies.csv", header = TRUE, sep = ",", fill = TRUE)
 ```
 
 ## Abstract
---
+This analysis was conducted to illustrate some important and curious facts about something that has been fascinating people for more than 100 years. Since Lumiere brothers created the first short film this industry has evolved a lot. Nowadays, with the internet, we have been surrounded by movies every day so we thought it would be interesting to go a little bit further about the data that it has behind. Can producers predict what people will prefer in the future in the cinema industry? Have most popular films any pattern to be most preferred? In this study, we will answer some questions like those and go deep in movies data, analysing and predicting some films attributes.
 
 ## Introduction and Related work
-Cinema is the most complex and powerful art form in the present world. It can help us to better
-understand our own lives, the lives of those around us and even how our society and culture operate. They can
-shed light on political and spiritual matters too and can provide catharsis and perspective and may open our
-eyes to new ways of thinking, feeling and pursuing our lives. This is why, in our way, we want to pay tribute with this movies analysis. Why we love some movies and hate others? We will conduct a study to try to understand better how movies and people are really connected.
+Cinema is the most complex and powerful art form in the present world. It can help us to better understand our own lives, the lives of those around us and even how our society and culture operate. They can shed light on political and spiritual matters too, and can provide catharsis and perspective and may open our eyes to new ways of thinking, feeling and pursuing our lives. This is why, in our way, we want to pay tribute with this movies analysis. Why we love some movies and hate others? We will conduct a study to try to understand better how movies and people are really connected.
 
 We have found some inspirational data science projects related to this domain:
 
@@ -38,28 +50,10 @@ We have found some inspirational data science projects related to this domain:
 
 
 ## Exploratory Data Analysis
-In our analysis we will use 2 different datasets. The first one, called IMDB Data, was collected by Kaggle on 2016. The data was extracted by querying the REST Api of [IMDB](https://www.imdb.com) to get the best 1000 films. The second one, dataset, called TMDB Movie Metadata, was also collected by Kaggle. The data was extracted from [The Movie Database](https://www.themoviedb.org) API to get 5000 films on 2017.
-
-### IMDB Data
-This dataset contains 1000 rows with a total of 12 columns.
-
-| *Name*        | *Data type*   | *Description*                                              |
-| :-----------: | :-----------: | :--------------------------------------------------------: |
-| Rank          | Integer       | Movie rank order                                           |
-| Title         | String        | The title of the film                                      |
-| Genre         | String        | A comma-separated list of genres used to classify the film |
-| Description   | String        | Brief one-sentence movie summary                           |
-| Director      | String        | The name of the film's director                            |
-| Actors        | String        | A comma-separated list of the main stars of the film       |
-| Year          | Integer       | The year that the film released as an integer              |
-| Runtime       | Integer       | The duration of the film in minutes                        |
-| Rating        | Decimal       | User rating for the movie 0-10                             |
-| Votes         | Integer       | Number of votes                                            |
-| Revenue       | Decimal       | Movie revenue in millions of dollars                       |
-| Metascore     | Integer       | Average of critic scores. Values are between 0 and 100     |
+In our analysis we will use the TMDB Movie Metadata dataset collected by Kaggle. The data was extracted from [The Movie Database](https://www.themoviedb.org) API to get almost 5000 films on 2017.
 
 ### TMDB Movie Metadata
-This dataset contains 5000 rows with a total of 20 columns.
+This dataset contains 4803 rows with a total of 20 columns.
 
 | *Name*               | *Data type*   | *Description*                                                   |
 | :------------------: | :-----------: | :-------------------------------------------------------------: |
@@ -84,23 +78,561 @@ This dataset contains 5000 rows with a total of 20 columns.
 | Vote_average         | Decimal       | Average of users rating for the movie 0-10                      |
 | Vote_count           | Integer       | Number of votes                                                 |
 
-
-```{r movies, echo = TRUE}
-summary(movies)
+```{r, echo = TRUE}
+summary(tmdb_movies)
 ```
 
+The most relevant features for this study are Budget, Genres, Revenue, and vote_average. We will use more than these ones but are lees important.
+
+We will clean a bit the data, so we will only use movies with all the fileds completed (no NA data), we wont consider either the movies with budget or revenue that equals 0, as we suppose that this is an error.
+In addition, each film has multiple genres, but we will only consider the first genre of each movie.
+```{r clean, include = FALSE}
+# removing where we have no data to work with
+movies2 <- na.omit(tmdb_movies)
+view(movies2)
+movies <-movies2
+
+# theres a lot of films with revenue=0 and busget=0, we don'w't want this
+movies2 <- movies2 %>% # 
+  filter(budget>0) %>% #
+  filter(revenue>0)
+
+# genres are all in same column, baad, we take only the first genre (the most important i hope)
+Genre <- movies2$genres
+Genre <- as.data.frame(Genre)
+Genre <- separate(Genre, col = Genre, into=c("1","2","3","4","5","6"))
+
+movies2$genres <- Genre$`5`
+movies2 <- na.omit(movies2)
+# we have removed an extra film with no genre
+
+# factor as factor and the column release date as date (spanish format)
+movies2$genres = as.factor(movies2$genres)
+movies2$production_countries = as.factor(movies2$production_countries)
+movies2$status = as.factor(movies2$status)
+```
+
+#### Revenue and budget
+First we will print a graph relating the revenue and budget, and with color information about the vote average, to see if we can se a relationship.
+
+```{r revVSbudgVSvote, echo=FALSE}
+# graph relations between budget and revenue with color as vote average
+plot2 = ggplot(data=movies2, aes(x=budget, y=revenue))
+plot2 + geom_jitter(aes(x=budget,y=revenue, color=vote_average), position=position_jitter(w=.3, h=.0))
+# we dont see anything clear, 2 more graph with vote average
+```
+
+
+We can see that it may exist a relationship between the revenue of a film and the budget invested, but it doesn´t seem like any of those feature is related to vote average in the graph, so let´s print in a separate graph.
+
+```{r relations with revenue, echo=FALSE}
+# graph relations between vote average and revenue
+plot3 = ggplot(data=movies2, aes(x=vote_average, y=revenue))
+plot3 + geom_jitter(aes(x=vote_average, color=revenue), position=position_jitter(w=.3, h=.0)) -> p1
+
+# graph relations between budget and vote average
+plot4 = ggplot(data=movies2, aes(x=vote_average, y=budget))
+plot4 + geom_jitter(aes(x=vote_average, color=budget), position=position_jitter(w=.3, h=.0)) -> p2
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+We can see it clearer now, and we can appreciate that it is possible that there is a relationship between the vote average and the revenue, but doesn´t seem like that with the budget.
+
+We are going to compare these features with the genre of the film, so we can see if action movies earn more mony than others genres movies.
+
+#### Genre
+Lets see if there is a relation between genre and revenue, so we can compare if a genre is better to make money than other.
+```{r violin}
+gen_vot <- ggplot(movies2, aes(x=genres, y=revenue),las=2) + 
+  geom_violin()
+gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+We can see than Action, Drama and Science-Fiction make a lot more money than the others movie genres. To making a better comparision, we are now to clean a bit more the data. We are going to keep only the genres more popular (by revenue), and these are:
+ - 1) Action
+ - 2) Adventure
+ - 3) Comedy
+ - 4) Drama 
+ - 5) Family
+ - 6) Fantasy
+ - 7) Romance
+ - 8) Science-fiction
+ - 9) Thriller
+ 
+We are going to compare with the vote average too, so we will quit all the movies with few votes.
+```{r violin2}
+summary(movies2$vote_count)
+```
+
+There is a big difference between the most voted and the least, so we are not going to use the ones in the first quartile.
+
+```{r clean_votes_and_genres, include= TRUE}
+# there are a lot of films who doesnt have many votes (half of movies have less than 471 votes), we have to use only fimls which have more than 178 votes
+# (1st quartile)
+movies_reduced_votes <- movies2 %>% # data frame to start with
+  filter(vote_count>178)  %>%
+  filter(genres=="Action" | genres=="Adventure" | genres=="Animation" | genres=="Comedy" | genres=="Drama" | genres=="Family" | genres=="Fantasy" | genres=="Romance" | genres=="Thriller" | genres=="Science")
+```
+
+Once we have a cleaner dataset, we want to compare the genre with revenue and score. In order to do that, we convert the vote average in facotr, so we round the number (it is a 1 to 10, scale).
+
+```{r facet_the_vote, include= TRUE}
+# making a facet with vote integers
+movies_reduced_votes$vote_average = sapply(movies_reduced_votes$vote_average, function(x) floor(x/1))
+movies_reduced_votes$vote_average <- as.factor(movies_reduced_votes$vote_average)
+```
+
+We make a plot now comparing these three variables, to see if there is a pattern.
+```{r plot_violin_by_vote}
+# we only lost like 400 movies, they were not common films then, good
+gen_vot <- ggplot(movies_reduced_votes, aes(x=genres, y=revenue)) + 
+  geom_violin()
+
+gen_vot <- gen_vot+facet_wrap(~vote_average)
+gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+We see than the genres revenue are similar, but when the score rounds the seven, action films earn much more money than the rest. To see if there is a different pattern with the action movies, we are going to do the same graphics than before but only with action movies.
+
+#### Action movies
+We need to clean the data first:
+```{r clean_action}
+# lets see revenue vs budget in action films compared to vote score, only for action movies
+action_movies <- movies_reduced_votes %>%
+  filter(genres == "Action")
+```
+
+And lastly we print the same graphs than before
+```{r action_graphs, echo= FALSE}
+# graph relations between busgete and revenue
+plotAction = ggplot(data=movies2, aes(x=budget, y=revenue))
+plotAction + geom_jitter(aes(x=budget, color=revenue), position=position_jitter(w=.3, h=.0))
+
+gen_vot <- ggplot(action_movies, aes(x=budget, y=revenue)) + 
+  geom_violin()
+gen_vot <- gen_vot+facet_wrap(~vote_average)
+gen_vot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# grid.arrange(p1, p2, ncol = 2)
+```
+
+Movies than have an 8 as a vote_average don't earn a lot or few money. We can also see that the ones that earn a lot of money they have an average budget.
+
+The first graph is the same that the one considering all genres, so it is no usefull for the study. However, we can see that in action films it is possible that the revenue is indeed related with the vote_average, so as the vote average rise, there are more films which have more revenue. The exception is the movies with more than an 8. These movies doesn´t have a big revenue, but they doen´t invest too much money in the budget neither, so they are likely profitable.
+
+#### Money vs Time
+We are going to plot some graphs tto see if there is a tendency to invest or earn more money with time. We are going to consider all the movies.
+
+```{r clean_date, echo=FALSE}
+# compare revenue with year
+movies2$release_date <- as.Date(movies2$release_date, "%Y-%m-%d")
+
+p4 <- ggplot(movies2, aes(x=release_date, y=revenue)) +
+  geom_point(color="steelblue") +
+  xlab("")
+
+p5 <- ggplot(movies2, aes(x=release_date, y=budget)) +
+  geom_point(color="steelblue") +
+  xlab("")
+
+grid.arrange(p4, p5, ncol = 2)
+```
+
+Seems like indeed there is more money invested each year. To have a clearer view, we have to plot the graph with only the median value, not with all the films.
+
+```{r mean_year, echo=FALSE}
+# first mutate to obtain the mean, then plot.
+movies3 <- movies2 %>%
+  mutate( year = format(release_date, "%Y")) %>%
+  group_by( year) %>%
+  mutate(revenue_mean=mean(revenue)) %>%
+  mutate(budget_mean=mean(budget)) 
+# summarise(total = mean(revenue))
+
+p7 <- ggplot(movies3, aes(x=release_date, y=revenue_mean)) +
+  geom_point() +
+  geom_line(color="steelblue")+
+  xlab("")
+
+p8 <- ggplot(movies3, aes(x=release_date, y=budget_mean)) +
+  geom_point() +
+  geom_line(color="steelblue")+
+  xlab("")
+  
+grid.arrange(p7, p8, ncol = 2)
+```
+
+It is obvious that, despite of the exception in the 20s years, the budget increase each year. In the revenue is not that obvious and it is possible that we need to do a time series analysis to be sure, but the tendency is increasing too.
+
+
 ## Questions of interest
-- What attributes makes the film better (with better we refer to the money earned, the views, the ratings)?
-- Does the duration of film influence the critic score?
+- What attributes makes the film better (with better we refer to the money earned, the popularity, the ratings)?
+- Does the duration of film influence the average of users rating?
 - Are some film genres more popular than others? Have it changed during years?
 - Have old films better critic scores than recent ones?
-- Can a film earn a more than 100 million donars if the genre is not one of the top3 popular gender in that year?
+- Can a film earn a more than 1 billion dollars if the genre is not one of the top3 popular gender in that year?
 - The release year influences in the popularity and revenue of a movie?
 
 ## Methods
 
+### Strength of relationships
+First we will clean the data
+```{r clean_data, echo = FALSE}
+#### Remove budget higher from 0 and revenue higher than 0
+tmdb_movies_clean <- tmdb_movies %>% 
+                     filter(budget>0) %>% 
+                     filter(revenue>0) 
+
+#### Remove where there is no data
+tmdb_movies_clean <- na.omit(tmdb_movies_clean)
+```
+
+#### Question 1) First we will see which attribute makes the film earn more money.
+
+Step 1.1) Select rows that we will use. In this case the earn money (*revenue*) are related to the variables *budget*, *genres*, *production companies*, *release date* and *spoken languages*.
+```{r revenue_related, echo = TRUE}
+movies_related_revenue <- tmdb_movies_clean %>% select(revenue, budget, genres, popularity, production_companies, release_date, vote_average, spoken_languages)
+```
+
+Step 1.2) Compare the variable *revenue* with other variables.
+```{r compare_revenue_budget, echo = TRUE}
+movies_r <- movies_related_revenue %>% select(revenue, budget)
+cor(movies_r$revenue, movies_r$budget)
+
+ggplot(movies_related_revenue, aes(x=revenue, y=budget))+
+  geom_point()+
+  geom_smooth(method=lm)+
+  labs(x="Revenue", y="Budget", title="Relation between Revenue and Badget")
+```
+
+```{r compare_revenue_budget2, eval=FALSE, include=TRUE}
+regression_model = lm(formula = revenue ~ budget + genres + popularity + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+
+summary(regression_model)
+```
+
+#### Question 2) Secondly we will see which attribute makes the film more popular in the TMBD website.
+```{r more_popular, echo = TRUE}
+movies_r <- movies_related_revenue %>% select(revenue, popularity)
+cor(movies_r$revenue, movies_r$popularity)
+
+ggplot(movies_related_revenue, aes(x=revenue, y=popularity))+
+  geom_point()+
+  geom_smooth(method=lm)+
+  labs(x="Revenue", y="Popularity", title="Relation between Revenue and Popularity")
+```
+
+```{r more_popular2, eval=FALSE, include=TRUE}
+regression_model = lm(formula = revenue ~ popularity + budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+
+summary(regression_model)
+```
+
+#### Question 3) Now we will see which attribute makes the film better voted by users.
+```{r better_voted, echo = TRUE}
+movies_r <- movies_related_revenue %>% select(revenue, budget, vote_average)
+cor(movies_r$revenue, movies_r$vote_average)
+cor(movies_r$budget, movies_r$vote_average)
+
+ggplot(movies_related_revenue, aes(x=revenue, y=vote_average))+
+  geom_point()+
+  geom_smooth(method=lm)+
+  labs(x="Revenue", y="Vote average", title="Relation between Revenue and Vote average")
+```
+
+```{r better_voted2, eval=FALSE, include=TRUE}
+regression_model = lm(formula = revenue ~ vote_average + budget + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+
+summary(regression_model)
+```
+
+```{r better_voted3, echo = TRUE}
+ggplot(movies_related_revenue, aes(x=budget, y=vote_average))+
+  geom_point()+
+  geom_smooth(method=lm)+
+  labs(x="Budget", y="Vote average", title="Relation between Budget and Vote average")
+```
+
+```{r better_voted4, eval=FALSE, include=TRUE}
+regression_model = lm(formula = budget ~ vote_average + revenue + genres + production_companies + release_date + spoken_languages, data=movies_related_revenue)
+
+summary(regression_model)
+```
+
+#### Question 4) After that we will see if the duration of film influence the average of users rating.
+```{r duration_influence_user_rating, echo = TRUE}
+# Numerical value of the correlation
+movies_r <- tmdb_movies_clean %>% select(vote_average, runtime)
+cor(movies_r$vote_average, movies_r$runtime)
+
+# Graphical representation
+ggplot(tmdb_movies_clean, aes(x=vote_average, y=runtime)) +
+geom_point(shape=1) +
+geom_smooth(method=lm)
+```
+
+#### Question 5) The next stage will be analyse the more popular movies genres and how has it changed during years.
+```{r popular_genres_during_years, echo = TRUE}
+# Top3 genres during years
+# Select the top genre for each year
+popular_genre <- tmdb_movies_clean
+popular_genre$year <- format(as.Date(popular_genre$release_date, format="%Y-%m-%d"),"%Y") # add year column
+
+# get first genre
+genre <- popular_genre$genres
+genre <- as.data.frame(genre)
+genre <- separate(genre, col = genre, into = c("1","2","3","4","5","6"))
+popular_genre$genres <- genre$`5`
+popular_genre <- na.omit(popular_genre) # we have removed an extra film with no genre
+
+popular_genre <- popular_genre %>%
+                 select(genres, year)
+
+# Subdivisions years
+old_genre <- popular_genre %>% 
+              filter(year<=1980)
+count(old_genre, "genres")
+# Top3:
+# 1) Drama
+# 2) Action and Comedy (equal number of films)
+
+neutral_genre <- popular_genre %>% 
+              filter(year>1980 && year<2015)
+count(neutral_genre, "genres")
+# Top3:
+# 1) Drama
+# 2) Comedy
+# 3) Action
+
+new_genre <- popular_genre %>% 
+              filter(year>=2015)
+count(new_genre, "genres")
+# Top3:
+# 1) Action
+# 2) Drama
+# 3) Comedy
+```
+
+#### Question 6) Moreover we will see if old films have better user scores than recent ones.
+```{r old_films_better_scores, echo = TRUE}
+# Compare films vote_average of films released on 1980 or before with the ones released on 2015 or after.
+tmdb_movies_clean$year <- format(as.Date(tmdb_movies_clean$release_date, format="%Y-%m-%d"),"%Y")
+
+movies_r <- tmdb_movies_clean %>% 
+            select(vote_average, vote_count, year)
+
+movies_old <- movies_r %>% 
+              filter(year<=1980)
+nrow(movies_old) # number of rows
+mean(movies_old$vote_average) # average vote
+sum(movies_old$vote_count) # number of votes
+
+movies_now <- movies_r %>% 
+              filter(year>=2015)
+nrow(movies_now) # number of rows
+mean(movies_now$vote_average) # average vote
+sum(movies_now$vote_count) # number of votes
+```
+
+#### Question 7) Lastly we will ask if a film can earn a more than 1 billion dollars if the genre is not one of the most popular gender in that year.
+```{r film_earn_billion, eval=FALSE, include=TRUE}
+# Filter movies with revenue more than 1.000.000.000 dollars
+movies_more_revenue <- tmdb_movies_clean %>% 
+                       filter(revenue>1000000000)
+
+# Select years from dates of the movies with more revenue
+movies_more_revenue$year <- format(as.Date(movies_more_revenue$release_date, format="%Y-%m-%d"),"%Y")
+
+# get first genre
+genre <- movies_more_revenue$genres
+genre <- as.data.frame(genre)
+genre <- separate(genre, col = genre, into = c("1","2","3","4","5","6"))
+movies_more_revenue$genres <- genre$`5`
+movies_more_revenue <- na.omit(movies_more_revenue) # we have removed an extra film with no genre
+
+movies_more_revenue <- movies_more_revenue %>% select(revenue, year, genres)
+movies_more_revenue <- movies_more_revenue[order(movies_more_revenue$year),]
+names(movies_more_revenue)[3] <- "movie_genre"
+
+# Select the top genre for each year
+year_top_genre <- tmdb_movies_clean
+year_top_genre$year <- format(as.Date(year_top_genre$release_date, format="%Y-%m-%d"),"%Y") # add year column
+
+# get first genre
+genre <- year_top_genre$genres
+genre <- as.data.frame(genre)
+genre <- separate(genre, col = genre, into = c("1","2","3","4","5","6"))
+year_top_genre$genres <- genre$`5`
+year_top_genre <- na.omit(year_top_genre) # we have removed an extra film with no genre
+
+# get genre and year
+year_top_genre <- year_top_genre %>% select(genres, year) 
+
+year_genre <- year_top_genre %>% select(year, genres) %>% 
+              group_by(year)
+
+# Compare the genre of each film with the top genre of the release year
+join(movies_more_revenue, year_genre, by ="year")
+```
+
+#### Question 8) Finally we will see if the release year influences in the popularity and revenue of a movie.
+```{r release_year_influences_popularity, echo = TRUE}
+tmdb_movies_clean$year <- as.numeric(format(as.Date(tmdb_movies_clean$release_date, format="%Y-%m-%d"),"%Y"))
+
+# Numerical value of the correlation
+movies_r <- tmdb_movies_clean %>% select(year, popularity, revenue)
+cor(movies_r$year, movies_r$popularity)
+cor(movies_r$year, movies_r$revenue)
+```
+
+### Prediction
+
+For the pre-processing stage, we have made some transformations:
+
+ - Remove irrelevant variables, such as name (the variable id identifies each entry), keywords and some variables, which format transformation exceeds the scope of this project.
+ 
+- Convert the name and description attributes, that could be interpreted as categorical variables, to a new field which contains the length of its name/description, in order to find fi this length is relevant for the model.
+
+- Delete missing values for target variables, such as revenue, vote or popularity, in order to train the model correctly.
+The final data frame looks like this:
+
+```
+   budget   ori_lan popularity release_date    revenue   runtime  status   vote_av. vote_count name_l tagline_l
+1 237000000   en    150.43758   2009-12-10   2787965087    162   Released    7.2      11800      6       27
+2 300000000   en    139.08262   2007-05-19   961000000     169   Released    6.9       4500      40      46
+3 245000000   en    107.37679   2015-10-26   880674609     148   Released    6.3       4466      7       21
+4 250000000   en    112.31295   2012-07-16   1084939099    165   Released    7.6       9106      21      15
+5 260000000   en     43.92699   2012-03-07   284139100     132   Released    6.1       2124      11      36
+6 258000000   en    115.69981   2007-05-01   890871626     139   Released    5.9       3576      12      18
+```
+
+About the machine learning algorithm, we just have used two types:
+-	Linear regression algorithm for the regression related questions. This algorithm allows seeing how well a variable (in this particular project, the runtime and release date) can predict score value.
+-	KNN algorithm to classify the data into clusters by the revenue and see the clusters proprieties.
+
+
 ## Results
 
+### Strength of relationships
+
+#### Question 1)
+The variable that have more influency to the *revenue* is the *budget* variable. The one that gets closer to 1 or -1 with the correlation test is the most related. Budget is the higher with 0.7053993.
+
+| *Budget* | *Genres* | *Popularity* | *Release_date* | *Spoken_languages* |
+| :------: | :------: | :----------: | :------------: | :----------------: |
+| 0.705399 | 0.362128 | -0.428725    | 0.229568       | 0.037188           |
+
+
+#### Question 2)
+The variable that influences more to the popularity of the film is the *revenue*. The one that gets closer to 1 or -1 with the correlation test is the most related. Revenue is the higher with 0.602245.
+
+| *Revenue* | *Genres* | *Popularity* | *Release_date* | *Spoken_languages* |
+| :-------: | :------: | :----------: | :------------: | :----------------: |
+| 0.602245  | 0.294614 | -0.371995    | 0.487992       | -0.152934          |
+
+
+#### Question 3)
+The variable that influences more to get better average mark by users is the *popularity* variable. The one that gets closer to 1 or -1 with the correlation test is the most related. Popularity is the higher with 0.3185934.
+
+| *Budget*    | *Revenue* | *Genres* | *Popularity* | *Release_date* | *Spoken_languages* |
+| :---------: | :-------: |:-------: | :----------: | :------------: | :----------------: |
+| -0.03120827 | 0.187839  | 0.028153 | 0.3185934    | 0.0051984      | -0.0018729         |
+
+
+#### Question 4)
+We get a correlation of 0.3786415 between the duration of the film and the average of users rating. This means there is almost no relation between this 2 factors. We can see it a graphic representation here:
+```{r question4, echo = TRUE}
+ggplot(tmdb_movies_clean, aes(x=vote_average, y=runtime)) +
+geom_point(shape=1) +
+geom_smooth(method=lm)
+```
+
+#### Question 5)
+We split the years in 3 clusters: before 1980, between 1980 and 2014 and after 2015.
+
+- Top3 genres before 1980:
+1) Drama
+2) Action and Comedy (equal number of films)
+
+- Top3 genres between 1980 and 2014:
+1) Drama
+2) Comedy
+3) Action
+
+- Top3 genres after 2015:
+1) Action
+2) Drama
+3) Comedy
+
+#### Question 6)
+We can see in the results than old films have better user score than the new ones in general. In this case we need to point out that we have more or less the same number of films in both clusters nevertheless old films have aproximately 33% less user reviews than the new ones.
+
+|                            | *Number of rows* | *Average of votes* | *Number of votes* |
+| :------------------------: | :--------------: | :----------------: | :---------------: |
+| **Old movies (<=1980)**    | 219              | 6.93105            | 124385            |
+| **recent movies (>=2015)** | 193              | 6.20725            | 321932            |
+
+
+#### Question 7)
+In the results we can see that is difficult that a film can earn more than 1 billion dollars if the genre is not one of the most popular gender in that year.
+
+| *Number films more than $1B* | *Same genre as the popular in that year*   | *Different genre than the popular in that year* |
+| :--------------------------: | :----------------------------------------: | :---------------------------------------------: |
+| 21                           | 18                                         | 3
+
+
+#### Question 8)
+Here we can see that the release year does not influence in the popularity and revenue of a movie as both correlations numbers are close to 0.
+
+| *Popularity* | *Revenue* |
+| :----------: | :-------: |
+| 0.1613506    | 0.1474426 |
+
+
+### Prediction
+
+We had to compare how well the variable score is predicted by:
+
+- The runtime --> we have had the next output:
+
+``` correlation_accuracy
+
+             actuals predicteds
+actuals    1.0000000  0.4146759
+predicteds 0.4146759  1.0000000
+
+> regr.eval(actuals_preds$actuals, actuals_preds$predicteds)
+      mae       mse      rmse      mape 
+0.6087162 0.6002294 0.7747448 0.1022778 
+
+```
+
+Seeing the correlation index and the rmse, we can conclude that the variables have a similar directional movement. Using the rmse, we can see that the mean error is too low, so the variables are correlated.
+
+-	The release date --> we have had the next output:
+
+``` correlation_accuracy
+
+             actuals predicteds
+actuals    1.0000000  0.1650971
+predicteds 0.1650971  1.0000000
+
+> regr.eval(actuals_preds$actuals, actuals_preds$predicteds)
+      mae       mse      rmse      mape 
+0.6569323 0.7043607 0.8392620 0.1111245 
+
+```
+
+In this case, the correlation between the data observed and predicted is two low, so we can’t conclude that both variables are correlated.
+
 ## Discussion and Future work
+The implications of the research are directly related with the film industry or the film critics. The success (votes and views) of the film is influenced by revenues, release date or the duration of the film. Knowing this productors can study all factors to try to earn more money, get better critics or improve the popularity of the movie.
+
+The future work could be divided, mainly, in two main fields:
+
+On one hand, the idea is to explore other possible relations between attributes, for example between the title length and the average vote. Hence, we could find answers to newer questions, like, for example, if the title of the film influences the positive votes or the total views of the film. Even more, we could find the semantic similarities between the words of the title of the most popular films.
+
+On the other hand, the exploration of new algorithms to use, in order to predict with more accuracy, could be a more technical part of the future work. Not only the use of other machine learning techniques but also  the employment of deep learning, smarter statistics, etc.
 
 
